@@ -1,0 +1,819 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Trading Journal</title>
+  <!-- FOUC(화면 깜빡임) 방지용 초기 테마 적용 스크립트 -->
+  <script>
+    (function() {
+      const theme = localStorage.getItem('theme') || 'dark';
+      if (theme === 'dark') {
+        document.documentElement.classList.add('dark');
+      } else {
+        document.documentElement.classList.remove('dark');
+      }
+    })();
+  </script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            darkBg: '#1f1f1f',
+            darkCard: '#262626',
+            darkBorder: '#383838',
+            accent: '#00ff66',
+            accentHover: '#00cc52',
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; -webkit-tap-highlight-color: transparent; }
+    input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(0.8); cursor: pointer; width: 100%; height: 100%; position: absolute; right: 0; top: 0; opacity: 0; }
+    ::-webkit-scrollbar { width: 4px; height: 4px; }
+    ::-webkit-scrollbar-thumb { background: #484848; border-radius: 3px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+  </style>
+</head>
+<body class="bg-zinc-100 dark:bg-darkBg text-zinc-800 dark:text-zinc-100 p-3 sm:p-6 md:p-8 min-h-screen transition-colors duration-200">
+  <div id="app" class="max-w-6xl mx-auto space-y-4 sm:space-y-5">
+    
+    <!-- 1. 헤더 -->
+    <header class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 pb-3 border-b border-zinc-200 dark:border-darkBorder">
+      <div>
+        <h1 class="text-lg sm:text-xl font-bold tracking-wide">매매일지</h1>
+      </div>
+      <div class="flex flex-wrap items-center gap-1.5 sm:gap-2 w-full sm:w-auto justify-end">
+        <!-- 테마 전환 토글 -->
+        <div class="bg-zinc-200 dark:bg-darkCard p-1 rounded-lg flex items-center border border-zinc-300 dark:border-darkBorder">
+          <button @click="setTheme('light')" :class="theme === 'light' ? 'bg-white text-zinc-900 shadow-sm' : 'text-zinc-400'" class="px-2.5 py-1 rounded text-xs font-semibold transition">라이트</button>
+          <button @click="setTheme('dark')" :class="theme === 'dark' ? 'bg-accent text-zinc-950 font-bold shadow-sm' : 'text-zinc-400'" class="px-2.5 py-1 rounded text-xs font-semibold transition">다크</button>
+        </div>
+        <button @click="exportJSON" class="text-xs text-zinc-500 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white px-2 py-1.5 rounded bg-zinc-200 dark:bg-darkCard border border-zinc-300 dark:border-darkBorder transition">JSON</button>
+        <button @click="exportCSV" class="text-xs text-zinc-500 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white px-2 py-1.5 rounded bg-zinc-200 dark:bg-darkCard border border-zinc-300 dark:border-darkBorder transition">CSV</button>
+        <label class="text-xs text-zinc-500 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white px-2 py-1.5 rounded bg-zinc-200 dark:bg-darkCard border border-zinc-300 dark:border-darkBorder cursor-pointer transition">
+          복구
+          <input type="file" accept=".json" @change="importJSON" class="hidden">
+        </label>
+        <button @click="openModal()" class="text-xs bg-accent hover:bg-accentHover text-zinc-950 font-bold px-3 py-1.5 rounded transition shadow-sm shadow-accent/20 ml-1">
+          + 기록 추가
+        </button>
+      </div>
+    </header>
+
+    <!-- 2. 대시보드 요약 -->
+    <section class="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3">
+      <div class="bg-white dark:bg-darkCard border border-zinc-200 dark:border-darkBorder p-3 rounded-xl shadow-sm">
+        <span class="text-[10px] sm:text-[11px] text-zinc-500 dark:text-zinc-400 block">총 손익</span>
+        <span class="text-base sm:text-lg font-bold font-mono" :class="stats.totalPnl > 0 ? 'text-accent' : stats.totalPnl < 0 ? 'text-rose-500' : 'text-zinc-400'">
+          ${{ stats.totalPnl.toFixed(2) }}
+        </span>
+      </div>
+      <div class="bg-white dark:bg-darkCard border border-zinc-200 dark:border-darkBorder p-3 rounded-xl shadow-sm">
+        <span class="text-[10px] sm:text-[11px] text-zinc-500 dark:text-zinc-400 block">승률</span>
+        <div class="flex items-baseline gap-1">
+          <span class="text-base sm:text-lg font-bold font-mono text-accent">{{ stats.winRate.toFixed(1) }}%</span>
+          <span class="text-[9px] sm:text-[10px] text-zinc-400">({{ stats.winCount }}승 {{ stats.lossCount }}패)</span>
+        </div>
+      </div>
+      <div class="bg-white dark:bg-darkCard border border-zinc-200 dark:border-darkBorder p-3 rounded-xl shadow-sm">
+        <span class="text-[10px] sm:text-[11px] text-zinc-500 dark:text-zinc-400 block">평균 손익</span>
+        <span class="text-base sm:text-lg font-bold font-mono" :class="stats.avgPnl > 0 ? 'text-accent' : stats.avgPnl < 0 ? 'text-rose-500' : 'text-zinc-400'">
+          ${{ stats.avgPnl.toFixed(2) }}
+        </span>
+      </div>
+      <div class="bg-white dark:bg-darkCard border border-zinc-200 dark:border-darkBorder p-3 rounded-xl shadow-sm">
+        <span class="text-[10px] sm:text-[11px] text-zinc-500 dark:text-zinc-400 block">최대 손익</span>
+        <div class="text-xs font-mono font-semibold flex gap-2 mt-0.5">
+          <span class="text-accent">+${{ stats.maxWin.toFixed(0) }}</span>
+          <span class="text-rose-500">-${{ Math.abs(stats.maxLoss).toFixed(0) }}</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3. 캘린더 + P&L 추이 차트 -->
+    <section class="grid grid-cols-1 md:grid-cols-12 gap-3 sm:gap-4 items-stretch">
+      <div class="md:col-span-7 bg-white dark:bg-darkCard border border-zinc-200 dark:border-darkBorder p-3 sm:p-4 rounded-xl shadow-sm space-y-2.5 flex flex-col justify-between">
+        <div class="flex justify-between items-center pb-2 border-b border-zinc-200 dark:border-darkBorder">
+          <h2 class="text-xs font-bold text-zinc-600 dark:text-zinc-300 tracking-wider">MONTHLY CALENDAR</h2>
+          <div class="flex items-center gap-1">
+            <button @click="prevMonth" class="text-xs text-zinc-400 hover:text-zinc-900 dark:hover:text-white px-2 py-1">‹</button>
+            <span class="text-xs font-bold font-mono text-accent px-1">{{ calendarYear }}.{{ String(calendarMonth + 1).padStart(2, '0') }}</span>
+            <button @click="nextMonth" class="text-xs text-zinc-400 hover:text-zinc-900 dark:hover:text-white px-2 py-1">›</button>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-7 gap-1 text-center text-[10px] sm:text-[11px] text-zinc-400 font-medium">
+          <div class="text-rose-500">일</div><div>월</div><div>화</div><div>수</div><div>목</div><div>금</div><div class="text-accent">토</div>
+        </div>
+
+        <div class="grid grid-cols-7 gap-1 flex-1">
+          <div v-for="(day, idx) in calendarDays" :key="idx" 
+               @click="day.isCurrentMonth && selectDateFromCalendar(day.dateStr)"
+               :class="[
+                 'h-10 sm:h-12 p-0.5 sm:p-1 rounded transition flex flex-col justify-between text-xs border',
+                 day.isCurrentMonth ? 'cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-800/80' : 'opacity-25 pointer-events-none',
+                 selectedTrade && selectedTrade.trade_date === day.dateStr ? 'bg-accent/10 border-accent shadow-sm' : 'border-transparent bg-zinc-50/50 dark:bg-[#202020]'
+               ]">
+            <span class="text-[9px] sm:text-[10px] font-mono text-zinc-400">{{ day.dayNum }}</span>
+            <span v-if="day.isCurrentMonth && dailyPnlMap[day.dateStr] !== undefined" 
+                  class="text-right font-mono font-bold text-[8px] sm:text-[9px] truncate"
+                  :class="dailyPnlMap[day.dateStr] > 0 ? 'text-accent' : dailyPnlMap[day.dateStr] < 0 ? 'text-rose-500' : 'text-zinc-400'">
+              {{ dailyPnlMap[day.dateStr] > 0 ? '+' : '' }}{{ dailyPnlMap[day.dateStr] }}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <div class="md:col-span-5 bg-white dark:bg-darkCard border border-zinc-200 dark:border-darkBorder p-3 sm:p-4 rounded-xl shadow-sm flex flex-col justify-between">
+        <div class="flex justify-between items-center pb-2 border-b border-zinc-200 dark:border-darkBorder">
+          <span class="text-xs font-bold text-zinc-600 dark:text-zinc-300 tracking-wider">P&L TREND</span>
+          <span class="text-[10px] font-mono text-zinc-400">Cumulative</span>
+        </div>
+        <div class="flex-1 min-h-[180px] sm:min-h-[220px] pt-2 relative flex items-center">
+          <canvas id="pnlChart"></canvas>
+        </div>
+      </div>
+    </section>
+
+    <!-- 4. 선택된 거래 상세 보기 카드 -->
+    <section id="detail-card" v-if="selectedTrade" class="bg-white dark:bg-darkCard border border-accent/40 rounded-xl p-4 sm:p-5 shadow-md space-y-3.5">
+      <div class="flex justify-between items-center pb-2.5 border-b border-zinc-200 dark:border-darkBorder">
+        <div class="flex flex-wrap items-center gap-2">
+          <span class="text-xs text-accent font-bold">DETAIL</span>
+          <span class="text-xs font-mono text-zinc-400">{{ selectedTrade.trade_date }}</span>
+          <span class="text-xs font-bold text-zinc-800 dark:text-white">{{ selectedTrade.symbol }}</span>
+          <span :class="selectedTrade.direction === 'Long' ? 'text-accent font-bold' : 'text-rose-400 font-bold'">
+            {{ selectedTrade.direction }}
+          </span>
+          <span v-if="selectedTrade.rr" class="text-xs font-mono text-accent bg-accent/10 px-1.5 py-0.5 rounded">
+            RR {{ formatRR(selectedTrade.rr) }}
+          </span>
+        </div>
+        <div class="flex items-center gap-1 sm:gap-2">
+          <button @click="openModal(selectedTrade)" class="text-xs text-zinc-400 hover:text-zinc-900 dark:hover:text-white p-1">수정</button>
+          <button @click="deleteTrade(selectedTrade.id)" class="text-xs text-rose-500 hover:text-rose-400 p-1">삭제</button>
+          <button @click="selectedTrade = null" class="text-xs text-zinc-400 hover:text-zinc-200 p-1 ml-1">✕</button>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-12 gap-4 items-stretch">
+        <div class="md:col-span-5 space-y-3">
+          <div class="flex gap-4 p-3 bg-zinc-50 dark:bg-[#202020] rounded-xl border border-zinc-200 dark:border-darkBorder">
+            <div>
+              <span class="text-[10px] text-zinc-400 block">손익</span>
+              <span class="text-lg font-bold font-mono" :class="selectedTrade.pnl > 0 ? 'text-accent' : selectedTrade.pnl < 0 ? 'text-rose-500' : 'text-zinc-400'">
+                {{ selectedTrade.pnl > 0 ? '+' : '' }}${{ selectedTrade.pnl }}
+              </span>
+            </div>
+            <div class="border-l border-zinc-200 dark:border-darkBorder pl-4">
+              <span class="text-[10px] text-zinc-400 block">결과</span>
+              <span class="text-sm font-bold font-mono text-zinc-700 dark:text-zinc-200">{{ selectedTrade.result }}</span>
+            </div>
+          </div>
+
+          <div class="p-3 bg-zinc-50 dark:bg-[#202020] rounded-xl border border-accent/20 space-y-1.5">
+            <span class="text-[11px] font-bold text-accent block pb-1 border-b border-zinc-200 dark:border-darkBorder">📐 SMC / ICT SETUP FRAMEWORK</span>
+            <div class="grid grid-cols-2 gap-x-2 gap-y-1 text-xs font-mono">
+              <div><span class="text-zinc-400 text-[10px]">MS:</span> <span class="text-zinc-700 dark:text-zinc-200">{{ getSmcData(selectedTrade).ms || '-' }}</span></div>
+              <div><span class="text-zinc-400 text-[10px]">LQ:</span> <span class="text-zinc-700 dark:text-zinc-200">{{ getSmcData(selectedTrade).lq || '-' }}</span></div>
+              <div><span class="text-zinc-400 text-[10px]">POI:</span> <span class="text-accent">{{ getSmcData(selectedTrade).poi || '-' }}</span></div>
+              <div><span class="text-zinc-400 text-[10px]">PD/OTE:</span> <span class="text-zinc-700 dark:text-zinc-200">{{ getSmcData(selectedTrade).pd || '-' }}</span></div>
+              <div class="col-span-2 pt-0.5"><span class="text-zinc-400 text-[10px]">LTF EM:</span> <span class="text-accent">{{ getSmcData(selectedTrade).ltf || '-' }}</span></div>
+            </div>
+          </div>
+
+          <div>
+            <span class="text-[11px] font-bold text-zinc-500 dark:text-zinc-400 block mb-1">복기 및 메모</span>
+            <div class="p-3 bg-zinc-50 dark:bg-[#202020] rounded-xl text-xs text-zinc-700 dark:text-zinc-300 min-h-[180px] whitespace-pre-wrap leading-relaxed border border-zinc-200 dark:border-darkBorder">
+              {{ selectedTrade.notes || '기록 없음' }}
+            </div>
+          </div>
+        </div>
+
+        <div class="md:col-span-7 flex flex-col justify-between">
+          <div class="flex justify-between items-center mb-1">
+            <span class="text-[11px] font-bold text-zinc-500 dark:text-zinc-400">차트 분석</span>
+            <div class="flex items-center gap-2">
+              <span v-if="selectedTradeImages.length > 1" class="text-[10px] text-accent/80 font-mono animate-pulse">← 좌우로 스와이프 하세요 →</span>
+              <span class="text-[10px] font-mono text-zinc-400">{{ selectedTradeImages.length }}장</span>
+            </div>
+          </div>
+
+          <div class="bg-zinc-50 dark:bg-[#202020] p-3 rounded-xl border border-zinc-200 dark:border-darkBorder flex-1 flex flex-col justify-between relative min-h-[320px] sm:min-h-[380px]"
+               @touchstart="handleTouchStart" @touchend="handleDetailTouchEnd">
+            <div class="relative flex-1 flex items-center justify-center select-none overflow-hidden my-auto py-2">
+              <template v-if="selectedTradeImages.length > 0">
+                <div class="grid gap-3 w-full h-full items-center justify-items-center" :class="visibleDetailImages.length > 1 ? 'grid-cols-2' : 'grid-cols-1'">
+                  <div v-for="(imgUrl, idx) in visibleDetailImages" :key="idx" class="flex items-center justify-center w-full h-full bg-zinc-200/50 dark:bg-black/20 rounded p-1.5 relative group">
+                    <img :src="imgUrl" @click="openImageModal(selectedTradeImages, activeImageIndex + idx)" 
+                         class="max-h-[320px] sm:max-h-[380px] w-full object-contain cursor-pointer hover:opacity-90 transition">
+                  </div>
+                </div>
+                <button v-if="selectedTradeImages.length > 1" @click="prevDetailImage" class="absolute left-1 top-1/2 -translate-y-1/2 bg-black/70 hover:bg-accent hover:text-zinc-950 text-white w-7 h-7 rounded-full text-xs flex items-center justify-center shadow transition">❮</button>
+                <button v-if="selectedTradeImages.length > 1" @click="nextDetailImage" class="absolute right-1 top-1/2 -translate-y-1/2 bg-black/70 hover:bg-accent hover:text-zinc-950 text-white w-7 h-7 rounded-full text-xs flex items-center justify-center shadow transition">❯</button>
+              </template>
+              <div v-else class="text-xs text-zinc-400">첨부된 이미지가 없습니다.</div>
+            </div>
+
+            <div v-if="selectedTradeImages.length > 1" class="flex gap-1.5 pt-2 mt-2 border-t border-zinc-200 dark:border-darkBorder overflow-x-auto items-center justify-center">
+              <img v-for="(img, idx) in selectedTradeImages" :key="idx" :src="img" @click="activeImageIndex = idx"
+                   :class="activeImageIndex === idx ? 'border-accent opacity-100 scale-105' : 'border-transparent opacity-40'"
+                   class="w-10 h-10 object-cover rounded border cursor-pointer flex-shrink-0 transition">
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 5. 검색 필터 & 거래 내역 표 -->
+    <section class="bg-white dark:bg-darkCard border border-zinc-200 dark:border-darkBorder rounded-xl shadow-sm overflow-hidden">
+      <div class="p-3 bg-zinc-50 dark:bg-[#202020] border-b border-zinc-200 dark:border-darkBorder flex flex-wrap gap-2 items-center justify-between">
+        <div class="flex items-center gap-2">
+          <span class="text-xs font-bold text-zinc-600 dark:text-zinc-300">SEARCH</span>
+          <button v-if="filters.symbol || filters.direction || filters.result || filters.date" @click="clearFilters" class="text-[10px] text-accent">초기화</button>
+        </div>
+        <div class="flex flex-wrap gap-1.5 sm:gap-2">
+          <select v-model="filters.symbol" class="p-1.5 text-xs rounded bg-white dark:bg-[#1f1f1f] border border-zinc-300 dark:border-darkBorder text-zinc-800 dark:text-zinc-200 focus:border-accent outline-none">
+            <option value="">종목 전체</option><option value="MNQ">MNQ</option><option value="MGC">MGC</option>
+          </select>
+          <select v-model="filters.direction" class="p-1.5 text-xs rounded bg-white dark:bg-[#1f1f1f] border border-zinc-300 dark:border-darkBorder text-zinc-800 dark:text-zinc-200 focus:border-accent outline-none">
+            <option value="">방향 전체</option><option value="Long">Long</option><option value="Short">Short</option>
+          </select>
+          <select v-model="filters.result" class="p-1.5 text-xs rounded bg-white dark:bg-[#1f1f1f] border border-zinc-300 dark:border-darkBorder text-zinc-800 dark:text-zinc-200 focus:border-accent outline-none">
+            <option value="">결과 전체</option><option value="Win">Win</option><option value="Loss">Loss</option>
+          </select>
+          <input type="date" v-model="filters.date" @click="$event.target.showPicker?.()" class="p-1.5 text-xs rounded bg-white dark:bg-[#1f1f1f] border border-zinc-300 dark:border-darkBorder text-zinc-800 dark:text-zinc-200 focus:border-accent outline-none relative">
+        </div>
+      </div>
+
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-xs whitespace-nowrap">
+          <thead class="bg-zinc-50 dark:bg-[#202020] text-zinc-400 border-b border-zinc-200 dark:border-darkBorder">
+            <tr>
+              <th class="p-3">날짜</th>
+              <th class="p-3">종목</th>
+              <th class="p-3">방향</th>
+              <th class="p-3">SMC 셋업 (POI / EM)</th>
+              <th class="p-3">손익비</th>
+              <th class="p-3">손익 ($)</th>
+              <th class="p-3">결과</th>
+              <th class="p-3">차트</th>
+              <th class="p-3 text-right">관리</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-zinc-200 dark:divide-darkBorder">
+            <tr v-if="filteredTrades.length === 0">
+              <td colspan="9" class="p-6 text-center text-zinc-400">기록이 없습니다.</td>
+            </tr>
+            <tr v-for="trade in filteredTrades" :key="trade.id" @click="selectTrade(trade)"
+                :class="selectedTrade && selectedTrade.id === trade.id ? 'bg-accent/10 border-l-2 border-accent' : 'hover:bg-zinc-50 dark:hover:bg-[#2c2c2c]'"
+                class="cursor-pointer transition">
+              <td class="p-3 font-mono text-zinc-400">{{ trade.trade_date }}</td>
+              <td class="p-3 font-semibold text-zinc-700 dark:text-zinc-200">{{ trade.symbol }}</td>
+              <td class="p-3">
+                <span :class="trade.direction === 'Long' ? 'text-accent font-bold' : 'text-rose-400 font-bold'">
+                  {{ trade.direction }}
+                </span>
+              </td>
+              <td class="p-3 font-mono text-xs">
+                <span class="text-accent">{{ getSmcData(trade).poi || '-' }}</span> 
+                <span class="text-zinc-400 px-1">/</span> 
+                <span class="text-accent">{{ getSmcData(trade).ltf || '-' }}</span>
+              </td>
+              <td class="p-3 font-mono text-accent">{{ formatRR(trade.rr) }}</td>
+              <td class="p-3 font-mono font-bold" :class="trade.pnl > 0 ? 'text-accent' : trade.pnl < 0 ? 'text-rose-500' : 'text-zinc-400'">
+                {{ trade.pnl > 0 ? '+' : '' }}{{ trade.pnl }}
+              </td>
+              <td class="p-3 font-semibold text-zinc-700 dark:text-zinc-200">{{ trade.result }}</td>
+              <td class="p-3">
+                <span v-if="getImages(trade).length > 0" class="text-accent">🖼️ {{ getImages(trade).length }}</span>
+                <span v-else class="text-zinc-400">-</span>
+              </td>
+              <td class="p-3 text-right space-x-2" @click.stop>
+                <button @click="openModal(trade)" class="text-zinc-400 hover:text-zinc-200 p-1">수정</button>
+                <button @click="deleteTrade(trade.id)" class="text-rose-500 hover:text-rose-400 p-1">삭제</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- 6. 기록 추가/수정 모달 -->
+    <div v-if="showModal" class="fixed inset-0 bg-black/80 flex items-center justify-center p-3 sm:p-4 z-50 overflow-y-auto">
+      <div class="bg-white dark:bg-darkCard border border-accent/40 rounded-xl p-4 sm:p-5 max-w-lg w-full space-y-3.5 my-auto max-h-[92vh] overflow-y-auto shadow-xl">
+        <div class="flex justify-between items-center pb-2 border-b border-zinc-200 dark:border-darkBorder">
+          <h3 class="text-sm font-bold text-zinc-800 dark:text-white">{{ isEditing ? '기록 수정' : '새 SMC 매매 기록' }}</h3>
+          <button @click="closeModal()" class="text-zinc-400 hover:text-zinc-200 p-1">✕</button>
+        </div>
+        
+        <form @submit.prevent="saveTrade" class="space-y-3">
+          <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
+            <div>
+              <label class="block text-[10px] text-zinc-500 dark:text-zinc-400 mb-1">날짜</label>
+              <input type="date" v-model="form.trade_date" @click="$event.target.showPicker?.()" required class="w-full p-2 text-xs rounded bg-white dark:bg-[#1a1a1a] border border-zinc-300 dark:border-[#3a3a3a] focus:border-accent focus:ring-1 focus:ring-accent outline-none text-zinc-800 dark:text-zinc-100 transition relative">
+            </div>
+            <div>
+              <label class="block text-[10px] text-zinc-500 dark:text-zinc-400 mb-1">종목</label>
+              <select v-model="form.symbol" required class="w-full p-2 text-xs rounded bg-white dark:bg-[#1a1a1a] border border-zinc-300 dark:border-[#3a3a3a] focus:border-accent focus:ring-1 focus:ring-accent outline-none text-zinc-800 dark:text-zinc-100 transition">
+                <option value="MNQ">MNQ</option><option value="MGC">MGC</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-[10px] text-zinc-500 dark:text-zinc-400 mb-1">방향</label>
+              <select v-model="form.direction" required class="w-full p-2 text-xs rounded bg-white dark:bg-[#1a1a1a] border border-zinc-300 dark:border-[#3a3a3a] focus:border-accent focus:ring-1 focus:ring-accent outline-none text-zinc-800 dark:text-zinc-100 transition">
+                <option value="Long">Long</option><option value="Short">Short</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-[10px] text-zinc-500 dark:text-zinc-400 mb-1">결과</label>
+              <select v-model="form.result" required class="w-full p-2 text-xs rounded bg-white dark:bg-[#1a1a1a] border border-zinc-300 dark:border-[#3a3a3a] focus:border-accent focus:ring-1 focus:ring-accent outline-none text-zinc-800 dark:text-zinc-100 transition">
+                <option value="Win">Win</option><option value="Loss">Loss</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-[10px] text-zinc-500 dark:text-zinc-400 mb-1">손익 ($)</label>
+              <input type="number" step="any" v-model.number="form.pnl" required class="w-full p-2 text-xs rounded bg-white dark:bg-[#1a1a1a] border border-zinc-300 dark:border-[#3a3a3a] focus:border-accent focus:ring-1 focus:ring-accent outline-none font-bold text-zinc-800 dark:text-zinc-100 transition">
+            </div>
+            <div>
+              <label class="block text-[10px] text-zinc-500 dark:text-zinc-400 mb-1">손익비</label>
+              <input type="number" step="0.1" v-model.number="form.rr" class="w-full p-2 text-xs rounded bg-white dark:bg-[#1a1a1a] border border-zinc-300 dark:border-[#3a3a3a] focus:border-accent focus:ring-1 focus:ring-accent outline-none font-mono text-zinc-800 dark:text-zinc-100 transition">
+            </div>
+          </div>
+
+          <div class="p-3 bg-zinc-50 dark:bg-[#202020] rounded-xl border border-accent/20 space-y-2">
+            <span class="text-[11px] font-bold text-accent block">📐 SMC / ICT SETUP FRAMEWORK</span>
+            
+            <div class="grid grid-cols-2 gap-2">
+              <div>
+                <label class="block text-[9px] text-zinc-500 dark:text-zinc-400 mb-1">MS (Market Structure)</label>
+                <input type="text" v-model="form.smc_ms" class="w-full p-1.5 text-xs rounded bg-white dark:bg-[#1a1a1a] border border-zinc-300 dark:border-[#3a3a3a] focus:border-accent focus:ring-1 focus:ring-accent outline-none font-mono text-zinc-800 dark:text-zinc-100 transition">
+              </div>
+              <div>
+                <label class="block text-[9px] text-zinc-500 dark:text-zinc-400 mb-1">LQ (Liquidity)</label>
+                <input type="text" v-model="form.smc_lq" class="w-full p-1.5 text-xs rounded bg-white dark:bg-[#1a1a1a] border border-zinc-300 dark:border-[#3a3a3a] focus:border-accent focus:ring-1 focus:ring-accent outline-none font-mono text-zinc-800 dark:text-zinc-100 transition">
+              </div>
+              <div>
+                <label class="block text-[9px] text-zinc-500 dark:text-zinc-400 mb-1">POI (Point of Interest)</label>
+                <input type="text" v-model="form.smc_poi" class="w-full p-1.5 text-xs rounded bg-white dark:bg-[#1a1a1a] border border-zinc-300 dark:border-[#3a3a3a] focus:border-accent focus:ring-1 focus:ring-accent outline-none font-mono text-zinc-800 dark:text-zinc-100 transition">
+              </div>
+              <div>
+                <label class="block text-[9px] text-zinc-500 dark:text-zinc-400 mb-1">PD / OTE</label>
+                <input type="text" v-model="form.smc_pd" class="w-full p-1.5 text-xs rounded bg-white dark:bg-[#1a1a1a] border border-zinc-300 dark:border-[#3a3a3a] focus:border-accent focus:ring-1 focus:ring-accent outline-none font-mono text-zinc-800 dark:text-zinc-100 transition">
+              </div>
+              <div class="col-span-2">
+                <label class="block text-[9px] text-zinc-500 dark:text-zinc-400 mb-1">LTF EM (Entry Model)</label>
+                <input type="text" v-model="form.smc_ltf" class="w-full p-1.5 text-xs rounded bg-white dark:bg-[#1a1a1a] border border-zinc-300 dark:border-[#3a3a3a] focus:border-accent focus:ring-1 focus:ring-accent outline-none font-mono text-zinc-800 dark:text-zinc-100 transition">
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-[10px] text-zinc-500 dark:text-zinc-400 mb-1">차트 이미지 (터치 선택 / 드래그 / 클립보드 붙여넣기)</label>
+            <div @dragover.prevent="isDragging = true" @dragleave.prevent="isDragging = false" @drop.prevent="handleDrop" @paste="handlePaste"
+                 :class="isDragging ? 'border-accent bg-accent/5' : 'border-zinc-300 dark:border-[#3a3a3a]'"
+                 class="border border-dashed rounded-xl p-2.5 text-center relative bg-zinc-50 dark:bg-[#202020] transition">
+              <input type="file" accept="image/*" multiple @change="handleFileUpload" class="absolute inset-0 opacity-0 cursor-pointer">
+              <span class="text-xs text-zinc-400">{{ uploading ? '업로드 중...' : '+ 이미지 첨부하기' }}</span>
+            </div>
+            <div v-if="form.images.length > 0" class="flex gap-1.5 mt-2 overflow-x-auto">
+              <div v-for="(img, idx) in form.images" :key="idx" class="relative group flex-shrink-0">
+                <img :src="img" class="w-12 h-12 object-cover rounded border border-zinc-300 dark:border-darkBorder">
+                <button type="button" @click="removeFormImage(idx)" class="absolute -top-1 -right-1 bg-rose-600 text-white w-4 h-4 rounded-full text-[9px] flex items-center justify-center">✕</button>
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-[10px] text-zinc-500 dark:text-zinc-400 mb-1">복기 및 메모</label>
+            <textarea v-model="form.notes" rows="6" class="w-full p-2 text-xs rounded bg-white dark:bg-[#1a1a1a] border border-zinc-300 dark:border-[#3a3a3a] focus:border-accent focus:ring-1 focus:ring-accent outline-none leading-relaxed text-zinc-800 dark:text-zinc-100 transition"></textarea>
+          </div>
+
+          <div class="flex justify-end gap-2 pt-2 border-t border-zinc-200 dark:border-darkBorder">
+            <button type="button" @click="closeModal()" class="px-3 py-1.5 text-xs text-zinc-400">취소</button>
+            <button type="submit" :disabled="uploading" class="px-4 py-1.5 text-xs bg-accent hover:bg-accentHover text-zinc-950 font-bold rounded shadow-sm shadow-accent/20">저장</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- 7. 이미지 확대 모달 -->
+    <div v-if="modalImages.length > 0" class="fixed inset-0 bg-black/95 flex items-center justify-center p-2 z-50 select-none" 
+         @click="closeImageModal" @touchstart="handleTouchStart" @touchend="handleModalTouchEnd">
+      <div class="relative max-w-5xl w-full flex items-center justify-center my-auto" @click.stop>
+        <img :src="modalImages[modalActiveIndex]" class="max-h-[85vh] max-w-full w-auto object-contain rounded">
+        <button v-if="modalImages.length > 1" @click="prevModalImage" class="absolute left-2 top-1/2 -translate-y-1/2 bg-black/70 hover:bg-accent hover:text-zinc-950 text-white w-9 h-9 rounded-full flex items-center justify-center text-sm shadow transition">❮</button>
+        <button v-if="modalImages.length > 1" @click="nextModalImage" class="absolute right-2 top-1/2 -translate-y-1/2 bg-black/70 hover:bg-accent hover:text-zinc-950 text-white w-9 h-9 rounded-full flex items-center justify-center text-sm shadow transition">❯</button>
+        <div class="absolute top-2 right-2">
+          <button @click="closeImageModal" class="bg-black/70 text-white w-8 h-8 rounded-full flex items-center justify-center text-xs shadow">✕</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    window.addEventListener('DOMContentLoaded', () => {
+      const SUPABASE_URL = 'https://ickxgwkvkcgrehufmwut.supabase.co';
+      const SUPABASE_KEY = 'sb_publishable_GLv8OIRpMqaI80yBdGng_w_Bh6Wxgqr';
+      const { createApp, ref, computed, onMounted, onUnmounted, watch, nextTick } = Vue;
+
+      createApp({
+        setup() {
+          const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+          const trades = ref([]);
+          const selectedTrade = ref(null);
+          const activeImageIndex = ref(0);
+          const showModal = ref(false);
+          const isEditing = ref(false);
+          const editingId = ref(null);
+          const uploading = ref(false);
+          const isDragging = ref(false);
+          const modalImages = ref([]);
+          const modalActiveIndex = ref(0);
+          const filters = ref({ symbol: '', direction: '', result: '', date: '' });
+
+          const theme = ref(localStorage.getItem('theme') || 'dark');
+          const setTheme = (mode) => {
+            theme.value = mode;
+            localStorage.setItem('theme', mode);
+            if (mode === 'dark') {
+              document.documentElement.classList.add('dark');
+            } else {
+              document.documentElement.classList.remove('dark');
+            }
+            nextTick(() => updateCharts());
+          };
+
+          let touchStartX = 0;
+          let touchStartY = 0;
+
+          const today = new Date();
+          const calendarYear = ref(today.getFullYear());
+          const calendarMonth = ref(today.getMonth());
+
+          const defaultForm = (initialDate = null) => ({
+            trade_date: initialDate || new Date().toISOString().substring(0, 10),
+            symbol: 'MNQ', direction: 'Long', pnl: 0, rr: 2, result: 'Win', 
+            notes: '', images: [],
+            smc_ms: '', smc_lq: '', smc_poi: '', smc_pd: '', smc_ltf: ''
+          });
+
+          const form = ref(defaultForm());
+          let pnlChart = null;
+
+          const formatRR = (val) => {
+            if (!val && val !== 0) return '-';
+            const strVal = String(val).trim();
+            if (strVal.includes(':')) return strVal;
+            return `1:${strVal}`;
+          };
+
+          const getImages = (trade) => {
+            if (!trade || !trade.image_url) return [];
+            try {
+              const parsed = JSON.parse(trade.image_url);
+              return Array.isArray(parsed) ? parsed : [trade.image_url];
+            } catch (e) { return [trade.image_url]; }
+          };
+
+          const getSmcData = (trade) => {
+            if (!trade || !trade.reason) return {};
+            
+            try {
+              if (trade.reason.trim().startsWith('{')) {
+                const parsed = JSON.parse(trade.reason);
+                if (typeof parsed === 'object' && parsed !== null) return parsed;
+              }
+            } catch (e) {}
+
+            const text = trade.reason;
+            return {
+              ms: text.includes('MS') ? (text.split('MS')[1]?.split('\n')[0]?.replace(/[:=]/g, '').trim() || '') : '',
+              lq: text.includes('LQ') ? (text.split('LQ')[1]?.split('\n')[0]?.replace(/[:=]/g, '').trim() || '') : '',
+              poi: text.includes('POI') ? (text.split('POI')[1]?.split('\n')[0]?.replace(/[:=]/g, '').trim() || '') : '',
+              pd: text.includes('PD') ? (text.split('PD')[1]?.split('\n')[0]?.replace(/[:=]/g, '').trim() || '') : '',
+              ltf: text.includes('LTF') ? (text.split('LTF')[1]?.split('\n')[0]?.replace(/[:=]/g, '').trim() || '') : '',
+            };
+          };
+
+          const selectedTradeImages = computed(() => getImages(selectedTrade.value));
+
+          const visibleDetailImages = computed(() => {
+            const imgs = selectedTradeImages.value;
+            if (imgs.length === 0) return [];
+            if (imgs.length === 1) return [imgs[0]];
+            const idx = activeImageIndex.value;
+            return idx + 1 < imgs.length ? [imgs[idx], imgs[idx + 1]] : [imgs[idx], imgs[0]];
+          });
+
+          const handleTouchStart = (e) => {
+            touchStartX = e.touches[0].clientX;
+            touchStartY = e.touches[0].clientY;
+          };
+
+          const handleDetailTouchEnd = (e) => {
+            const deltaX = e.changedTouches[0].clientX - touchStartX;
+            const deltaY = e.changedTouches[0].clientY - touchStartY;
+            if (Math.abs(deltaX) > 40 && Math.abs(deltaX) > Math.abs(deltaY)) {
+              if (deltaX < 0) nextDetailImage(); else prevDetailImage();
+            }
+          };
+
+          const handleModalTouchEnd = (e) => {
+            const deltaX = e.changedTouches[0].clientX - touchStartX;
+            const deltaY = e.changedTouches[0].clientY - touchStartY;
+            if (Math.abs(deltaX) > 40 && Math.abs(deltaX) > Math.abs(deltaY)) {
+              if (deltaX < 0) nextModalImage(); else prevModalImage();
+            }
+          };
+
+          const fetchTrades = async () => {
+            const { data } = await supabaseClient.from('trades').select('*').order('trade_date', { ascending: false }).order('id', { ascending: false });
+            if (data) {
+              trades.value = data;
+              updateCharts();
+              if (data.length > 0 && !selectedTrade.value) {
+                selectedTrade.value = data[0];
+              }
+            }
+          };
+
+          const uploadFiles = async (files) => {
+            const validFiles = Array.from(files).filter(f => f.type.startsWith('image/'));
+            if (!validFiles.length) return;
+            uploading.value = true;
+            try {
+              for (const file of validFiles) {
+                const fileName = `${Date.now()}_${Math.random().toString(36).substring(2, 6)}.png`;
+                await supabaseClient.storage.from('trade-charts').upload(fileName, file);
+                const { data } = supabaseClient.storage.from('trade-charts').getPublicUrl(fileName);
+                form.value.images.push(data.publicUrl);
+              }
+            } finally { uploading.value = false; isDragging.value = false; }
+          };
+
+          const handleFileUpload = (e) => e.target.files && uploadFiles(e.target.files);
+          const handleDrop = (e) => uploadFiles(e.dataTransfer.files);
+          const handlePaste = (e) => {
+            const items = e.clipboardData?.items || [];
+            const files = Array.from(items).filter(i => i.type.startsWith('image/')).map(i => i.getAsFile());
+            if (files.length) uploadFiles(files);
+          };
+
+          const removeFormImage = (idx) => form.value.images.splice(idx, 1);
+          const prevDetailImage = () => activeImageIndex.value = (activeImageIndex.value - 1 + selectedTradeImages.value.length) % selectedTradeImages.value.length;
+          const nextDetailImage = () => activeImageIndex.value = (activeImageIndex.value + 1) % selectedTradeImages.value.length;
+
+          const openImageModal = (imgs, idx = 0) => { modalImages.value = imgs; modalActiveIndex.value = idx; };
+          const closeImageModal = () => modalImages.value = [];
+          const prevModalImage = () => modalActiveIndex.value = (modalActiveIndex.value - 1 + modalImages.value.length) % modalImages.value.length;
+          const nextModalImage = () => modalActiveIndex.value = (modalActiveIndex.value + 1) % modalImages.value.length;
+
+          const handleKeyDown = (e) => {
+            if (modalImages.value.length > 0) {
+              if (e.key === 'ArrowLeft') prevModalImage();
+              else if (e.key === 'ArrowRight') nextModalImage();
+              else if (e.key === 'Escape') closeImageModal();
+            }
+          };
+
+          onMounted(() => {
+            fetchTrades();
+            window.addEventListener('keydown', handleKeyDown);
+          });
+
+          onUnmounted(() => {
+            window.removeEventListener('keydown', handleKeyDown);
+          });
+
+          const selectTrade = (trade) => {
+            selectedTrade.value = trade;
+            activeImageIndex.value = 0;
+            nextTick(() => document.getElementById('detail-card')?.scrollIntoView({ behavior: 'smooth', block: 'center' }));
+          };
+
+          const selectDateFromCalendar = (dateStr) => {
+            const found = trades.value.find(t => t.trade_date === dateStr);
+            found ? selectTrade(found) : openModal(null, dateStr);
+          };
+
+          const dailyPnlMap = computed(() => {
+            const map = {};
+            trades.value.forEach(t => map[t.trade_date] = (map[t.trade_date] || 0) + (Number(t.pnl) || 0));
+            return map;
+          });
+
+          const calendarDays = computed(() => {
+            const year = calendarYear.value, month = calendarMonth.value;
+            const firstDay = new Date(year, month, 1).getDay();
+            const lastDate = new Date(year, month + 1, 0).getDate();
+            const prevLastDate = new Date(year, month, 0).getDate();
+            const days = [];
+
+            for (let i = firstDay - 1; i >= 0; i--) days.push({ dayNum: prevLastDate - i, isCurrentMonth: false, dateStr: '' });
+            for (let i = 1; i <= lastDate; i++) {
+              const mStr = String(month + 1).padStart(2, '0'), dStr = String(i).padStart(2, '0');
+              days.push({ dayNum: i, isCurrentMonth: true, dateStr: `${year}-${mStr}-${dStr}` });
+            }
+            const rem = (7 - (days.length % 7)) % 7;
+            for (let i = 1; i <= rem; i++) days.push({ dayNum: i, isCurrentMonth: false, dateStr: '' });
+            return days;
+          });
+
+          const prevMonth = () => calendarMonth.value === 0 ? (calendarMonth.value = 11, calendarYear.value--) : calendarMonth.value--;
+          const nextMonth = () => calendarMonth.value === 11 ? (calendarMonth.value = 0, calendarYear.value++) : calendarMonth.value++;
+          const clearFilters = () => filters.value = { symbol: '', direction: '', result: '', date: '' };
+
+          const filteredTrades = computed(() => {
+            return trades.value.filter(t => {
+              return (!filters.value.symbol || t.symbol === filters.value.symbol) &&
+                     (!filters.value.direction || t.direction === filters.value.direction) &&
+                     (!filters.value.result || t.result === filters.value.result) &&
+                     (!filters.value.date || t.trade_date === filters.value.date);
+            });
+          });
+
+          const stats = computed(() => {
+            const list = filteredTrades.value;
+            if (!list.length) return { totalPnl: 0, winRate: 0, avgPnl: 0, maxWin: 0, maxLoss: 0, winCount: 0, lossCount: 0 };
+            let totalPnl = 0, winCount = 0, lossCount = 0, maxWin = 0, maxLoss = 0;
+            list.forEach(t => {
+              const p = Number(t.pnl) || 0;
+              totalPnl += p;
+              if (t.result === 'Win') winCount++; else if (t.result === 'Loss') lossCount++;
+              if (p > maxWin) maxWin = p;
+              if (p < maxLoss) maxLoss = p;
+            });
+            return { totalPnl, winRate: (winCount / list.length) * 100, avgPnl: totalPnl / list.length, maxWin, maxLoss, winCount, lossCount };
+          });
+
+          const updateCharts = () => {
+            const sorted = [...filteredTrades.value].sort((a,b) => new Date(a.trade_date) - new Date(b.trade_date));
+            let cum = 0;
+            const labels = [], pnlData = [];
+            sorted.forEach(t => { cum += Number(t.pnl) || 0; labels.push(t.trade_date); pnlData.push(cum); });
+
+            if (pnlChart) pnlChart.destroy();
+            const ctx = document.getElementById('pnlChart')?.getContext('2d');
+            const isDark = document.documentElement.classList.contains('dark');
+            if (ctx) {
+              pnlChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                  labels: labels.length ? labels : ['-'],
+                  datasets: [{ 
+                    data: pnlData.length ? pnlData : [0], 
+                    borderColor: '#00ff66', 
+                    borderWidth: 1.5,
+                    backgroundColor: isDark ? 'rgba(0,255,102,0.08)' : 'rgba(0,255,102,0.1)', 
+                    fill: true, 
+                    tension: 0.2, 
+                    pointRadius: 1.5 
+                  }]
+                },
+                options: { 
+                  responsive: true, 
+                  maintainAspectRatio: false, 
+                  resizeDelay: 200,
+                  plugins: { legend: { display: false } }, 
+                  scales: { 
+                    x: { display: false },
+                    y: { 
+                      grid: { color: isDark ? '#383838' : '#e2e8f0' }, 
+                      ticks: { color: isDark ? '#a1a1aa' : '#64748b', font: { size: 10 } } 
+                    }
+                  } 
+                }
+              });
+            }
+          };
+
+          watch(filteredTrades, () => updateCharts());
+
+          const openModal = (trade = null, dateStr = null) => {
+            if (trade) {
+              isEditing.value = true; editingId.value = trade.id;
+              const smc = getSmcData(trade);
+              
+              let rawRR = trade.rr;
+              if (typeof rawRR === 'string' && rawRR.includes(':')) {
+                rawRR = parseFloat(rawRR.split(':')[1]) || rawRR;
+              }
+
+              form.value = { 
+                ...trade, 
+                rr: rawRR !== undefined && rawRR !== null ? Number(rawRR) : 2,
+                notes: trade.notes || '',
+                images: getImages(trade),
+                smc_ms: smc.ms || '',
+                smc_lq: smc.lq || '',
+                smc_poi: smc.poi || '',
+                smc_pd: smc.pd || '',
+                smc_ltf: smc.ltf || ''
+              };
+            } else {
+              isEditing.value = false; editingId.value = null;
+              form.value = defaultForm(dateStr);
+            }
+            showModal.value = true;
+          };
+
+          const closeModal = () => showModal.value = false;
+
+          const saveTrade = async () => {
+            const smcObj = {
+              ms: form.value.smc_ms,
+              lq: form.value.smc_lq,
+              poi: form.value.smc_poi,
+              pd: form.value.smc_pd,
+              ltf: form.value.smc_ltf
+            };
+
+            const payload = {
+              trade_date: form.value.trade_date, 
+              symbol: form.value.symbol, 
+              direction: form.value.direction,
+              pnl: Number(form.value.pnl) || 0, 
+              rr: Number(form.value.rr) || 0, 
+              result: form.value.result, 
+              reason: JSON.stringify(smcObj),
+              notes: form.value.notes || '', 
+              image_url: JSON.stringify(form.value.images)
+            };
+
+            let res = null;
+            if (isEditing.value) {
+              const { data } = await supabaseClient.from('trades').update(payload).eq('id', editingId.value).select();
+              if (data) res = data[0];
+            } else {
+              const { data } = await supabaseClient.from('trades').insert([payload]).select();
+              if (data) res = data[0];
+            }
+            closeModal();
+            await fetchTrades();
+            if (res) selectTrade(res);
+          };
+
+          const deleteTrade = async (id) => {
+            if (confirm('삭제하시겠습니까?')) {
+              await supabaseClient.from('trades').delete().eq('id', id);
+              if (selectedTrade.value?.id === id) selectedTrade.value = null;
+              fetchTrades();
+            }
+          };
+
+          const exportJSON = () => {
+            const blob = new Blob([JSON.stringify(trades.value, null, 2)], { type: 'application/json' });
+            const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `backup_${new Date().toISOString().substring(0,10)}.json`; a.click();
+          };
+
+          const exportCSV = () => {
+            if (!trades.value.length) return;
+            const headers = ['id', 'trade_date', 'symbol', 'direction', 'pnl', 'rr', 'result', 'reason', 'notes'];
+            const rows = trades.value.map(t => headers.map(h => `"${t[h] || ''}"`).join(','));
+            const blob = new Blob(['\uFEFF' + [headers.join(','), ...rows].join('\n')], { type: 'text/csv;' });
+            const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `journal_${new Date().toISOString().substring(0,10)}.csv`; a.click();
+          };
+
+          const importJSON = (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = async (evt) => {
+              try {
+                const imported = JSON.parse(evt.target.result);
+                if (Array.isArray(imported) && confirm('데이터를 복구하시겠습니까?')) {
+                  const cleaned = imported.map(({ id, created_at, ...rest }) => rest);
+                  await supabaseClient.from('trades').insert(cleaned);
+                  fetchTrades();
+                }
+              } catch (err) { alert('올바른 파일이 아닙니다.'); }
+            };
+            reader.readAsText(file);
+          };
+
+          return {
+            trades, filteredTrades, filters, stats, showModal, isEditing, form, uploading, isDragging, selectedTrade, activeImageIndex,
+            selectedTradeImages, visibleDetailImages, modalImages, modalActiveIndex, getImages, getSmcData, formatRR,
+            calendarYear, calendarMonth, calendarDays, dailyPnlMap, prevMonth, nextMonth, selectDateFromCalendar, selectTrade, clearFilters,
+            openModal, closeModal, saveTrade, deleteTrade, handleFileUpload, handleDrop, handlePaste, removeFormImage,
+            prevDetailImage, nextDetailImage, openImageModal, closeImageModal, prevModalImage, nextModalImage,
+            handleTouchStart, handleDetailTouchEnd, handleModalTouchEnd,
+            exportJSON, exportCSV, importJSON, theme, setTheme
+          };
+        }
+      }).mount('#app');
+    });
+  </script>
+</body>
+</html>
