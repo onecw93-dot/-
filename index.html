@@ -29,7 +29,7 @@
             darkBorder: '#383838',
             accent: '#00ff66',
             accentHover: '#00cc52',
-            customOrange: '#fb923c', // 커스텀 오렌지 컬러
+            customOrange: '#fb923c',
           }
         }
       }
@@ -346,26 +346,87 @@
           <div class="p-3 bg-zinc-50 dark:bg-[#202020] rounded-xl border border-accent/20 space-y-2">
             <span class="text-[11px] font-bold text-accent block">📐 SMC / ICT SETUP FRAMEWORK</span>
             
-            <div class="grid grid-cols-2 gap-2">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <!-- MS -->
               <div>
                 <label class="block text-[9px] text-zinc-500 dark:text-zinc-400 mb-1">MS (Market Structure)</label>
-                <input type="text" v-model="form.smc_ms" class="w-full p-1.5 text-xs rounded bg-white dark:bg-[#1a1a1a] border border-zinc-300 dark:border-[#3a3a3a] focus:border-accent focus:ring-1 focus:ring-accent outline-none font-mono text-customOrange font-semibold transition">
+                <div class="flex gap-1">
+                  <input type="text" v-model="form.smc_ms_text" class="w-3/5 p-1.5 text-xs rounded bg-white dark:bg-[#1a1a1a] border border-zinc-300 dark:border-[#3a3a3a] focus:border-accent focus:ring-1 focus:ring-accent outline-none font-mono text-customOrange font-semibold transition">
+                  <select v-model="form.smc_ms_opt" class="w-2/5 p-1.5 text-xs rounded bg-white dark:bg-[#1a1a1a] border border-zinc-300 dark:border-[#3a3a3a] focus:border-accent focus:ring-1 focus:ring-accent outline-none text-customOrange font-semibold transition">
+                    <option value="">선택</option>
+                    <option value="L">L</option>
+                    <option value="S">S</option>
+                    <option value="R">R</option>
+                  </select>
+                </div>
               </div>
+
+              <!-- LQ -->
               <div>
                 <label class="block text-[9px] text-zinc-500 dark:text-zinc-400 mb-1">LQ (Liquidity)</label>
-                <input type="text" v-model="form.smc_lq" class="w-full p-1.5 text-xs rounded bg-white dark:bg-[#1a1a1a] border border-zinc-300 dark:border-[#3a3a3a] focus:border-accent focus:ring-1 focus:ring-accent outline-none font-mono text-customOrange font-semibold transition">
+                <div class="flex gap-1">
+                  <input type="text" v-model="form.smc_lq_text" class="w-3/5 p-1.5 text-xs rounded bg-white dark:bg-[#1a1a1a] border border-zinc-300 dark:border-[#3a3a3a] focus:border-accent focus:ring-1 focus:ring-accent outline-none font-mono text-customOrange font-semibold transition">
+                  <select v-model="form.smc_lq_opt" class="w-2/5 p-1.5 text-xs rounded bg-white dark:bg-[#1a1a1a] border border-zinc-300 dark:border-[#3a3a3a] focus:border-accent focus:ring-1 focus:ring-accent outline-none text-customOrange font-semibold transition">
+                    <option value="">선택</option>
+                    <option value="IRL">IRL</option>
+                    <option value="ERL">ERL</option>
+                    <option value="PDH LG">PDH LG</option>
+                    <option value="PDL LG">PDL LG</option>
+                    <option value="ASIA H LG">ASIA H LG</option>
+                    <option value="ASIA L LG">ASIA L LG</option>
+                    <option value="LUNDUN H LG">LUNDUN H LG</option>
+                    <option value="LUNDUN L LG">LUNDUN L LG</option>
+                  </select>
+                </div>
               </div>
+
+              <!-- POI -->
               <div>
                 <label class="block text-[9px] text-zinc-500 dark:text-zinc-400 mb-1">POI (Point of Interest)</label>
-                <input type="text" v-model="form.smc_poi" class="w-full p-1.5 text-xs rounded bg-white dark:bg-[#1a1a1a] border border-zinc-300 dark:border-[#3a3a3a] focus:border-accent focus:ring-1 focus:ring-accent outline-none font-mono text-customOrange font-semibold transition">
+                <div class="flex gap-1">
+                  <input type="text" v-model="form.smc_poi_text" class="w-3/5 p-1.5 text-xs rounded bg-white dark:bg-[#1a1a1a] border border-zinc-300 dark:border-[#3a3a3a] focus:border-accent focus:ring-1 focus:ring-accent outline-none font-mono text-customOrange font-semibold transition">
+                  <select v-model="form.smc_poi_opt" class="w-2/5 p-1.5 text-xs rounded bg-white dark:bg-[#1a1a1a] border border-zinc-300 dark:border-[#3a3a3a] focus:border-accent focus:ring-1 focus:ring-accent outline-none text-customOrange font-semibold transition">
+                    <option value="">선택</option>
+                    <option value="OB">OB</option>
+                    <option value="IMB">IMB</option>
+                    <option value="BB">BB</option>
+                    <option value="RB">RB</option>
+                  </select>
+                </div>
               </div>
+
+              <!-- PD / OTE -->
               <div>
                 <label class="block text-[9px] text-zinc-500 dark:text-zinc-400 mb-1">PD / OTE</label>
-                <input type="text" v-model="form.smc_pd" class="w-full p-1.5 text-xs rounded bg-white dark:bg-[#1a1a1a] border border-zinc-300 dark:border-[#3a3a3a] focus:border-accent focus:ring-1 focus:ring-accent outline-none font-mono text-customOrange font-semibold transition">
+                <div class="flex gap-1">
+                  <select v-model="form.smc_pd_opt1" class="w-1/2 p-1.5 text-xs rounded bg-white dark:bg-[#1a1a1a] border border-zinc-300 dark:border-[#3a3a3a] focus:border-accent focus:ring-1 focus:ring-accent outline-none text-customOrange font-semibold transition">
+                    <option value="">옵션1</option>
+                    <option value="P">P</option>
+                    <option value="D">D</option>
+                  </select>
+                  <select v-model="form.smc_pd_opt2" class="w-1/2 p-1.5 text-xs rounded bg-white dark:bg-[#1a1a1a] border border-zinc-300 dark:border-[#3a3a3a] focus:border-accent focus:ring-1 focus:ring-accent outline-none text-customOrange font-semibold transition">
+                    <option value="">옵션2</option>
+                    <option value="0.5">0.5</option>
+                    <option value="0.62">0.62</option>
+                    <option value="0.705">0.705</option>
+                    <option value="0.709">0.709</option>
+                  </select>
+                </div>
               </div>
-              <div class="col-span-2">
+
+              <!-- LTF EM -->
+              <div class="sm:col-span-2">
                 <label class="block text-[9px] text-zinc-500 dark:text-zinc-400 mb-1">LTF EM (Entry Model)</label>
-                <input type="text" v-model="form.smc_ltf" class="w-full p-1.5 text-xs rounded bg-white dark:bg-[#1a1a1a] border border-zinc-300 dark:border-[#3a3a3a] focus:border-accent focus:ring-1 focus:ring-accent outline-none font-mono text-customOrange font-semibold transition">
+                <div class="flex gap-1">
+                  <input type="text" v-model="form.smc_ltf_text" class="w-3/5 p-1.5 text-xs rounded bg-white dark:bg-[#1a1a1a] border border-zinc-300 dark:border-[#3a3a3a] focus:border-accent focus:ring-1 focus:ring-accent outline-none font-mono text-customOrange font-semibold transition">
+                  <select v-model="form.smc_ltf_opt" class="w-2/5 p-1.5 text-xs rounded bg-white dark:bg-[#1a1a1a] border border-zinc-300 dark:border-[#3a3a3a] focus:border-accent focus:ring-1 focus:ring-accent outline-none text-customOrange font-semibold transition">
+                    <option value="">선택</option>
+                    <option value="BOS">BOS</option>
+                    <option value="RANGE REVERSAL">RANGE REVERSAL</option>
+                    <option value="SMS">SMS</option>
+                    <option value="PO3">PO3</option>
+                  </select>
+                </div>
               </div>
             </div>
           </div>
@@ -457,7 +518,11 @@
             trade_date: initialDate || new Date().toISOString().substring(0, 10),
             symbol: 'MNQ', direction: 'Long', pnl: 0, rr: 2, result: 'Win', 
             notes: '', images: [],
-            smc_ms: '', smc_lq: '', smc_poi: '', smc_pd: '', smc_ltf: ''
+            smc_ms_text: '', smc_ms_opt: '',
+            smc_lq_text: '', smc_lq_opt: '',
+            smc_poi_text: '', smc_poi_opt: '',
+            smc_pd_opt1: '', smc_pd_opt2: '',
+            smc_ltf_text: '', smc_ltf_opt: ''
           });
 
           const form = ref(defaultForm());
@@ -484,7 +549,25 @@
             try {
               if (trade.reason.trim().startsWith('{')) {
                 const parsed = JSON.parse(trade.reason);
-                if (typeof parsed === 'object' && parsed !== null) return parsed;
+                if (typeof parsed === 'object' && parsed !== null) {
+                  const formatPair = (txt, opt) => {
+                    if (txt && opt) return `${txt} ${opt}`;
+                    return txt || opt || '';
+                  };
+                  const formatPd = (o1, o2) => {
+                    if (o1 && o2) return `${o1} ${o2}`;
+                    return o1 || o2 || '';
+                  };
+
+                  return {
+                    ms: formatPair(parsed.ms_text, parsed.ms_opt),
+                    lq: formatPair(parsed.lq_text, parsed.lq_opt),
+                    poi: formatPair(parsed.poi_text, parsed.poi_opt),
+                    pd: formatPd(parsed.pd_opt1, parsed.pd_opt2),
+                    ltf: formatPair(parsed.ltf_text, parsed.ltf_opt),
+                    raw: parsed
+                  };
+                }
               }
             } catch (e) {}
 
@@ -696,6 +779,7 @@
             if (trade) {
               isEditing.value = true; editingId.value = trade.id;
               const smc = getSmcData(trade);
+              const rawSmc = smc.raw || {};
               
               let rawRR = trade.rr;
               if (typeof rawRR === 'string' && rawRR.includes(':')) {
@@ -707,11 +791,16 @@
                 rr: rawRR !== undefined && rawRR !== null ? Number(rawRR) : 2,
                 notes: trade.notes || '',
                 images: getImages(trade),
-                smc_ms: smc.ms || '',
-                smc_lq: smc.lq || '',
-                smc_poi: smc.poi || '',
-                smc_pd: smc.pd || '',
-                smc_ltf: smc.ltf || ''
+                smc_ms_text: rawSmc.ms_text || '',
+                smc_ms_opt: rawSmc.ms_opt || '',
+                smc_lq_text: rawSmc.lq_text || '',
+                smc_lq_opt: rawSmc.lq_opt || '',
+                smc_poi_text: rawSmc.poi_text || '',
+                smc_poi_opt: rawSmc.poi_opt || '',
+                smc_pd_opt1: rawSmc.pd_opt1 || '',
+                smc_pd_opt2: rawSmc.pd_opt2 || '',
+                smc_ltf_text: rawSmc.ltf_text || '',
+                smc_ltf_opt: rawSmc.ltf_opt || ''
               };
             } else {
               isEditing.value = false; editingId.value = null;
@@ -724,11 +813,16 @@
 
           const saveTrade = async () => {
             const smcObj = {
-              ms: form.value.smc_ms,
-              lq: form.value.smc_lq,
-              poi: form.value.smc_poi,
-              pd: form.value.smc_pd,
-              ltf: form.value.smc_ltf
+              ms_text: form.value.smc_ms_text,
+              ms_opt: form.value.smc_ms_opt,
+              lq_text: form.value.smc_lq_text,
+              lq_opt: form.value.smc_lq_opt,
+              poi_text: form.value.smc_poi_text,
+              poi_opt: form.value.smc_poi_opt,
+              pd_opt1: form.value.smc_pd_opt1,
+              pd_opt2: form.value.smc_pd_opt2,
+              ltf_text: form.value.smc_ltf_text,
+              ltf_opt: form.value.smc_ltf_opt
             };
 
             const payload = {
