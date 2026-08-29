@@ -4,7 +4,6 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Trading Journal</title>
-  <!-- FOUC(화면 깜빡임) 방지용 초기 테마 적용 스크립트 -->
   <script>
     (function() {
       const theme = localStorage.getItem('theme') || 'dark';
@@ -30,6 +29,7 @@
             darkBorder: '#383838',
             accent: '#00ff66',
             accentHover: '#00cc52',
+            customOrange: '#fb923c', // 커스텀 오렌지 컬러
           }
         }
       }
@@ -46,13 +46,11 @@
 <body class="bg-zinc-100 dark:bg-darkBg text-zinc-800 dark:text-zinc-100 p-3 sm:p-6 md:p-8 min-h-screen transition-colors duration-200">
   <div id="app" class="max-w-6xl mx-auto space-y-4 sm:space-y-5">
     
-    <!-- 1. 헤더 -->
     <header class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 pb-3 border-b border-zinc-200 dark:border-darkBorder">
       <div>
         <h1 class="text-lg sm:text-xl font-bold tracking-wide">매매일지</h1>
       </div>
       <div class="flex flex-wrap items-center gap-1.5 sm:gap-2 w-full sm:w-auto justify-end">
-        <!-- 테마 전환 토글 -->
         <div class="bg-zinc-200 dark:bg-darkCard p-1 rounded-lg flex items-center border border-zinc-300 dark:border-darkBorder">
           <button @click="setTheme('light')" :class="theme === 'light' ? 'bg-white text-zinc-900 shadow-sm' : 'text-zinc-400'" class="px-2.5 py-1 rounded text-xs font-semibold transition">라이트</button>
           <button @click="setTheme('dark')" :class="theme === 'dark' ? 'bg-accent text-zinc-950 font-bold shadow-sm' : 'text-zinc-400'" class="px-2.5 py-1 rounded text-xs font-semibold transition">다크</button>
@@ -69,7 +67,6 @@
       </div>
     </header>
 
-    <!-- 2. 대시보드 요약 -->
     <section class="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3">
       <div class="bg-white dark:bg-darkCard border border-zinc-200 dark:border-darkBorder p-3 rounded-xl shadow-sm">
         <span class="text-[10px] sm:text-[11px] text-zinc-500 dark:text-zinc-400 block">총 손익</span>
@@ -99,7 +96,6 @@
       </div>
     </section>
 
-    <!-- 3. 캘린더 + P&L 추이 차트 -->
     <section class="grid grid-cols-1 md:grid-cols-12 gap-3 sm:gap-4 items-stretch">
       <div class="md:col-span-7 bg-white dark:bg-darkCard border border-zinc-200 dark:border-darkBorder p-3 sm:p-4 rounded-xl shadow-sm space-y-2.5 flex flex-col justify-between">
         <div class="flex justify-between items-center pb-2 border-b border-zinc-200 dark:border-darkBorder">
@@ -144,7 +140,6 @@
       </div>
     </section>
 
-    <!-- 4. 선택된 거래 상세 보기 카드 -->
     <section id="detail-card" v-if="selectedTrade" class="bg-white dark:bg-darkCard border border-accent/40 rounded-xl p-4 sm:p-5 shadow-md space-y-3.5">
       <div class="flex justify-between items-center pb-2.5 border-b border-zinc-200 dark:border-darkBorder">
         <div class="flex flex-wrap items-center gap-2">
@@ -183,11 +178,11 @@
           <div class="p-3 bg-zinc-50 dark:bg-[#202020] rounded-xl border border-accent/20 space-y-1.5">
             <span class="text-[11px] font-bold text-accent block pb-1 border-b border-zinc-200 dark:border-darkBorder">📐 SMC / ICT SETUP FRAMEWORK</span>
             <div class="grid grid-cols-2 gap-x-2 gap-y-1 text-xs font-mono">
-              <div><span class="text-zinc-400 text-[10px]">MS:</span> <span class="text-zinc-700 dark:text-zinc-200">{{ getSmcData(selectedTrade).ms || '-' }}</span></div>
-              <div><span class="text-zinc-400 text-[10px]">LQ:</span> <span class="text-zinc-700 dark:text-zinc-200">{{ getSmcData(selectedTrade).lq || '-' }}</span></div>
-              <div><span class="text-zinc-400 text-[10px]">POI:</span> <span class="text-accent">{{ getSmcData(selectedTrade).poi || '-' }}</span></div>
-              <div><span class="text-zinc-400 text-[10px]">PD/OTE:</span> <span class="text-zinc-700 dark:text-zinc-200">{{ getSmcData(selectedTrade).pd || '-' }}</span></div>
-              <div class="col-span-2 pt-0.5"><span class="text-zinc-400 text-[10px]">LTF EM:</span> <span class="text-accent">{{ getSmcData(selectedTrade).ltf || '-' }}</span></div>
+              <div><span class="text-zinc-400 text-[10px]">MS:</span> <span class="text-customOrange font-semibold">{{ getSmcData(selectedTrade).ms || '-' }}</span></div>
+              <div><span class="text-zinc-400 text-[10px]">LQ:</span> <span class="text-customOrange font-semibold">{{ getSmcData(selectedTrade).lq || '-' }}</span></div>
+              <div><span class="text-zinc-400 text-[10px]">POI:</span> <span class="text-customOrange font-semibold">{{ getSmcData(selectedTrade).poi || '-' }}</span></div>
+              <div><span class="text-zinc-400 text-[10px]">PD/OTE:</span> <span class="text-customOrange font-semibold">{{ getSmcData(selectedTrade).pd || '-' }}</span></div>
+              <div class="col-span-2 pt-0.5"><span class="text-zinc-400 text-[10px]">LTF EM:</span> <span class="text-customOrange font-semibold">{{ getSmcData(selectedTrade).ltf || '-' }}</span></div>
             </div>
           </div>
 
@@ -234,7 +229,6 @@
       </div>
     </section>
 
-    <!-- 5. 검색 필터 & 거래 내역 표 -->
     <section class="bg-white dark:bg-darkCard border border-zinc-200 dark:border-darkBorder rounded-xl shadow-sm overflow-hidden">
       <div class="p-3 bg-zinc-50 dark:bg-[#202020] border-b border-zinc-200 dark:border-darkBorder flex flex-wrap gap-2 items-center justify-between">
         <div class="flex items-center gap-2">
@@ -285,9 +279,9 @@
                 </span>
               </td>
               <td class="p-3 font-mono text-xs">
-                <span class="text-accent">{{ getSmcData(trade).poi || '-' }}</span> 
+                <span class="text-customOrange font-semibold">{{ getSmcData(trade).poi || '-' }}</span> 
                 <span class="text-zinc-400 px-1">/</span> 
-                <span class="text-accent">{{ getSmcData(trade).ltf || '-' }}</span>
+                <span class="text-customOrange font-semibold">{{ getSmcData(trade).ltf || '-' }}</span>
               </td>
               <td class="p-3 font-mono text-accent">{{ formatRR(trade.rr) }}</td>
               <td class="p-3 font-mono font-bold" :class="trade.pnl > 0 ? 'text-accent' : trade.pnl < 0 ? 'text-rose-500' : 'text-zinc-400'">
@@ -308,7 +302,6 @@
       </div>
     </section>
 
-    <!-- 6. 기록 추가/수정 모달 -->
     <div v-if="showModal" class="fixed inset-0 bg-black/80 flex items-center justify-center p-3 sm:p-4 z-50 overflow-y-auto">
       <div class="bg-white dark:bg-darkCard border border-accent/40 rounded-xl p-4 sm:p-5 max-w-lg w-full space-y-3.5 my-auto max-h-[92vh] overflow-y-auto shadow-xl">
         <div class="flex justify-between items-center pb-2 border-b border-zinc-200 dark:border-darkBorder">
@@ -356,23 +349,23 @@
             <div class="grid grid-cols-2 gap-2">
               <div>
                 <label class="block text-[9px] text-zinc-500 dark:text-zinc-400 mb-1">MS (Market Structure)</label>
-                <input type="text" v-model="form.smc_ms" class="w-full p-1.5 text-xs rounded bg-white dark:bg-[#1a1a1a] border border-zinc-300 dark:border-[#3a3a3a] focus:border-accent focus:ring-1 focus:ring-accent outline-none font-mono text-zinc-800 dark:text-zinc-100 transition">
+                <input type="text" v-model="form.smc_ms" class="w-full p-1.5 text-xs rounded bg-white dark:bg-[#1a1a1a] border border-zinc-300 dark:border-[#3a3a3a] focus:border-accent focus:ring-1 focus:ring-accent outline-none font-mono text-customOrange font-semibold transition">
               </div>
               <div>
                 <label class="block text-[9px] text-zinc-500 dark:text-zinc-400 mb-1">LQ (Liquidity)</label>
-                <input type="text" v-model="form.smc_lq" class="w-full p-1.5 text-xs rounded bg-white dark:bg-[#1a1a1a] border border-zinc-300 dark:border-[#3a3a3a] focus:border-accent focus:ring-1 focus:ring-accent outline-none font-mono text-zinc-800 dark:text-zinc-100 transition">
+                <input type="text" v-model="form.smc_lq" class="w-full p-1.5 text-xs rounded bg-white dark:bg-[#1a1a1a] border border-zinc-300 dark:border-[#3a3a3a] focus:border-accent focus:ring-1 focus:ring-accent outline-none font-mono text-customOrange font-semibold transition">
               </div>
               <div>
                 <label class="block text-[9px] text-zinc-500 dark:text-zinc-400 mb-1">POI (Point of Interest)</label>
-                <input type="text" v-model="form.smc_poi" class="w-full p-1.5 text-xs rounded bg-white dark:bg-[#1a1a1a] border border-zinc-300 dark:border-[#3a3a3a] focus:border-accent focus:ring-1 focus:ring-accent outline-none font-mono text-zinc-800 dark:text-zinc-100 transition">
+                <input type="text" v-model="form.smc_poi" class="w-full p-1.5 text-xs rounded bg-white dark:bg-[#1a1a1a] border border-zinc-300 dark:border-[#3a3a3a] focus:border-accent focus:ring-1 focus:ring-accent outline-none font-mono text-customOrange font-semibold transition">
               </div>
               <div>
                 <label class="block text-[9px] text-zinc-500 dark:text-zinc-400 mb-1">PD / OTE</label>
-                <input type="text" v-model="form.smc_pd" class="w-full p-1.5 text-xs rounded bg-white dark:bg-[#1a1a1a] border border-zinc-300 dark:border-[#3a3a3a] focus:border-accent focus:ring-1 focus:ring-accent outline-none font-mono text-zinc-800 dark:text-zinc-100 transition">
+                <input type="text" v-model="form.smc_pd" class="w-full p-1.5 text-xs rounded bg-white dark:bg-[#1a1a1a] border border-zinc-300 dark:border-[#3a3a3a] focus:border-accent focus:ring-1 focus:ring-accent outline-none font-mono text-customOrange font-semibold transition">
               </div>
               <div class="col-span-2">
                 <label class="block text-[9px] text-zinc-500 dark:text-zinc-400 mb-1">LTF EM (Entry Model)</label>
-                <input type="text" v-model="form.smc_ltf" class="w-full p-1.5 text-xs rounded bg-white dark:bg-[#1a1a1a] border border-zinc-300 dark:border-[#3a3a3a] focus:border-accent focus:ring-1 focus:ring-accent outline-none font-mono text-zinc-800 dark:text-zinc-100 transition">
+                <input type="text" v-model="form.smc_ltf" class="w-full p-1.5 text-xs rounded bg-white dark:bg-[#1a1a1a] border border-zinc-300 dark:border-[#3a3a3a] focus:border-accent focus:ring-1 focus:ring-accent outline-none font-mono text-customOrange font-semibold transition">
               </div>
             </div>
           </div>
@@ -406,7 +399,6 @@
       </div>
     </div>
 
-    <!-- 7. 이미지 확대 모달 -->
     <div v-if="modalImages.length > 0" class="fixed inset-0 bg-black/95 flex items-center justify-center p-2 z-50 select-none" 
          @click="closeImageModal" @touchstart="handleTouchStart" @touchend="handleModalTouchEnd">
       <div class="relative max-w-5xl w-full flex items-center justify-center my-auto" @click.stop>
