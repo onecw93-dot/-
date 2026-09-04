@@ -347,7 +347,6 @@
             <span class="text-[11px] font-bold text-accent block">📐 SMC / ICT SETUP FRAMEWORK</span>
             
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              <!-- MS -->
               <div>
                 <label class="block text-[9px] text-zinc-500 dark:text-zinc-400 mb-1">MS (Market Structure)</label>
                 <div class="flex gap-1">
@@ -364,7 +363,6 @@
                 </div>
               </div>
 
-              <!-- LQ (타임프레임 제거, 동일한 선택 옵션 2개) -->
               <div>
                 <label class="block text-[9px] text-zinc-500 dark:text-zinc-400 mb-1">LQ (Liquidity)</label>
                 <div class="flex gap-1">
@@ -393,7 +391,6 @@
                 </div>
               </div>
 
-              <!-- POI -->
               <div>
                 <label class="block text-[9px] text-zinc-500 dark:text-zinc-400 mb-1">POI (Point of Interest)</label>
                 <div class="flex gap-1">
@@ -411,7 +408,6 @@
                 </div>
               </div>
 
-              <!-- PD / OTE -->
               <div>
                 <label class="block text-[9px] text-zinc-500 dark:text-zinc-400 mb-1">PD / OTE</label>
                 <div class="flex gap-1">
@@ -430,7 +426,6 @@
                 </div>
               </div>
 
-              <!-- LTF EM -->
               <div class="sm:col-span-2">
                 <label class="block text-[9px] text-zinc-500 dark:text-zinc-400 mb-1">LTF EM (Entry Model)</label>
                 <div class="flex gap-1">
@@ -479,14 +474,15 @@
       </div>
     </div>
 
-    <div v-if="modalImages.length > 0" class="fixed inset-0 bg-black/95 flex items-center justify-center p-2 z-50 select-none" 
+    <!-- 이미지 확대 모달 (웹창 크기에 거의 꽉 차도록 극대화됨) -->
+    <div v-if="modalImages.length > 0" class="fixed inset-0 bg-black/95 flex items-center justify-center p-0 sm:p-1 z-50 select-none overflow-hidden" 
          @click="closeImageModal" @touchstart="handleTouchStart" @touchend="handleModalTouchEnd">
-      <div class="relative max-w-5xl w-full flex items-center justify-center my-auto" @click.stop>
-        <img :src="modalImages[modalActiveIndex]" class="max-h-[85vh] max-w-full w-auto object-contain rounded">
-        <button v-if="modalImages.length > 1" @click="prevModalImage" class="absolute left-2 top-1/2 -translate-y-1/2 bg-black/70 hover:bg-accent hover:text-zinc-950 text-white w-9 h-9 rounded-full flex items-center justify-center text-sm shadow transition">❮</button>
-        <button v-if="modalImages.length > 1" @click="nextModalImage" class="absolute right-2 top-1/2 -translate-y-1/2 bg-black/70 hover:bg-accent hover:text-zinc-950 text-white w-9 h-9 rounded-full flex items-center justify-center text-sm shadow transition">❯</button>
-        <div class="absolute top-2 right-2">
-          <button @click="closeImageModal" class="bg-black/70 text-white w-8 h-8 rounded-full flex items-center justify-center text-xs shadow">✕</button>
+      <div class="relative w-full h-full flex items-center justify-center p-0 sm:p-2" @click.stop>
+        <img :src="modalImages[modalActiveIndex]" class="max-h-[99vh] max-w-[99vw] w-auto h-auto object-contain rounded shadow-2xl">
+        <button v-if="modalImages.length > 1" @click="prevModalImage" class="absolute left-2 top-1/2 -translate-y-1/2 bg-black/70 hover:bg-accent hover:text-zinc-950 text-white w-12 h-12 rounded-full flex items-center justify-center text-lg shadow transition">❮</button>
+        <button v-if="modalImages.length > 1" @click="nextModalImage" class="absolute right-2 top-1/2 -translate-y-1/2 bg-black/70 hover:bg-accent hover:text-zinc-950 text-white w-12 h-12 rounded-full flex items-center justify-center text-lg shadow transition">❯</button>
+        <div class="absolute top-2 right-2 z-10">
+          <button @click="closeImageModal" class="bg-black/70 hover:bg-rose-600 text-white w-10 h-10 rounded-full flex items-center justify-center text-base shadow transition">✕</button>
         </div>
       </div>
     </div>
