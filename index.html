@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
   <title>Trading Journal</title>
   <script>
     (function() {
@@ -474,15 +474,15 @@
       </div>
     </div>
 
-    <!-- 이미지 확대 모달 (웹창 크기에 거의 꽉 차도록 극대화됨) -->
-    <div v-if="modalImages.length > 0" class="fixed inset-0 bg-black/95 flex items-center justify-center p-0 sm:p-1 z-50 select-none overflow-hidden" 
-         @click="closeImageModal" @touchstart="handleTouchStart" @touchend="handleModalTouchEnd">
-      <div class="relative w-full h-full flex items-center justify-center p-0 sm:p-2" @click.stop>
-        <img :src="modalImages[modalActiveIndex]" class="max-h-[99vh] max-w-[99vw] w-auto h-auto object-contain rounded shadow-2xl">
-        <button v-if="modalImages.length > 1" @click="prevModalImage" class="absolute left-2 top-1/2 -translate-y-1/2 bg-black/70 hover:bg-accent hover:text-zinc-950 text-white w-12 h-12 rounded-full flex items-center justify-center text-lg shadow transition">❮</button>
-        <button v-if="modalImages.length > 1" @click="nextModalImage" class="absolute right-2 top-1/2 -translate-y-1/2 bg-black/70 hover:bg-accent hover:text-zinc-950 text-white w-12 h-12 rounded-full flex items-center justify-center text-lg shadow transition">❯</button>
-        <div class="absolute top-2 right-2 z-10">
-          <button @click="closeImageModal" class="bg-black/70 hover:bg-rose-600 text-white w-10 h-10 rounded-full flex items-center justify-center text-base shadow transition">✕</button>
+    <!-- 이미지 확대 모달 (모바일 스크롤/핀치줌 최적화) -->
+    <div v-if="modalImages.length > 0" class="fixed inset-0 bg-black/95 flex items-center justify-center z-50 overflow-auto select-none" 
+         @click="closeImageModal">
+      <div class="relative w-full min-h-full flex items-center justify-center p-2 sm:p-6" @click.stop>
+        <img :src="modalImages[modalActiveIndex]" class="max-w-none w-auto h-auto object-contain rounded shadow-2xl transition-transform duration-75">
+        <button v-if="modalImages.length > 1" @click="prevModalImage" class="absolute left-3 top-1/2 -translate-y-1/2 bg-black/70 hover:bg-accent hover:text-zinc-950 text-white w-10 h-10 rounded-full flex items-center justify-center text-base shadow transition z-10">❮</button>
+        <button v-if="modalImages.length > 1" @click="nextModalImage" class="absolute right-3 top-1/2 -translate-y-1/2 bg-black/70 hover:bg-accent hover:text-zinc-950 text-white w-10 h-10 rounded-full flex items-center justify-center text-base shadow transition z-10">❯</button>
+        <div class="absolute top-3 right-3 z-10">
+          <button @click="closeImageModal" class="bg-black/70 hover:bg-rose-600 text-white w-9 h-9 rounded-full flex items-center justify-center text-sm shadow transition">✕</button>
         </div>
       </div>
     </div>
@@ -622,14 +622,6 @@
             const deltaY = e.changedTouches[0].clientY - touchStartY;
             if (Math.abs(deltaX) > 40 && Math.abs(deltaX) > Math.abs(deltaY)) {
               if (deltaX < 0) nextDetailImage(); else prevDetailImage();
-            }
-          };
-
-          const handleModalTouchEnd = (e) => {
-            const deltaX = e.changedTouches[0].clientX - touchStartX;
-            const deltaY = e.changedTouches[0].clientY - touchStartY;
-            if (Math.abs(deltaX) > 40 && Math.abs(deltaX) > Math.abs(deltaY)) {
-              if (deltaX < 0) nextModalImage(); else prevModalImage();
             }
           };
 
@@ -889,7 +881,7 @@
             const headers = ['id', 'trade_date', 'symbol', 'direction', 'pnl', 'rr', 'result', 'reason', 'notes'];
             const rows = trades.value.map(t => headers.map(h => `"${t[h] || ''}"`).join(','));
             const blob = new Blob(['\uFEFF' + [headers.join(','), ...rows].join('\n')], { type: 'text/csv;' });
-            const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `journal_${new Date().toISOString().substring(0,10)}.csv`; a.click();
+            const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `journal_${new Date().toISOString().substring(0,10)}.json`.replace('.json', '.csv'); a.click();
           };
 
           const importJSON = (e) => {
@@ -915,7 +907,7 @@
             calendarYear, calendarMonth, calendarDays, dailyPnlMap, prevMonth, nextMonth, selectDateFromCalendar, selectTrade, clearFilters,
             openModal, closeModal, saveTrade, deleteTrade, handleFileUpload, handleDrop, handlePaste, removeFormImage,
             prevDetailImage, nextDetailImage, openImageModal, closeImageModal, prevModalImage, nextModalImage,
-            handleTouchStart, handleDetailTouchEnd, handleModalTouchEnd,
+            handleTouchStart, handleDetailTouchEnd,
             exportJSON, exportCSV, importJSON, theme, setTheme, timeframes
           };
         }
