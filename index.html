@@ -474,7 +474,7 @@
       </div>
     </div>
 
-    <!-- 이미지 확대 모달 (모바일 확대/축소 시 핀치 줌 제스처 충돌 및 오동작 방지 개선 버전) -->
+    <!-- 이미지 확대 모달 (핀치 줌 제스처 충돌 및 오동작 방지 완전 개선 버전) -->
     <div v-if="modalImages.length > 0" class="fixed inset-0 bg-black/95 z-50 flex flex-col select-none">
       <!-- 상단 컨트롤 바 -->
       <div class="flex justify-between items-center p-3 sm:p-4 bg-black/40 backdrop-blur-md z-10">
@@ -485,16 +485,16 @@
         </div>
       </div>
 
-      <!-- 스크롤 및 핀치 줌이 가능한 컨테이너 (다중 터치 시 페이지네이션 스와이프 차단) -->
+      <!-- 스크롤 및 핀치 줌이 가능한 컨테이너 (다중 터치 및 핀치 상태 확인) -->
       <div class="relative flex-1 overflow-auto flex items-center justify-center p-1 sm:p-6" 
-           @touchstart="handleModalTouchStart" @touchend="handleModalTouchEnd">
+           @touchstart="handleModalTouchStart" @touchmove="handleModalTouchMove" @touchend="handleModalTouchEnd">
         <div class="w-full h-full flex items-center justify-center min-h-[50vh]">
           <img :src="modalImages[modalActiveIndex]" 
                class="max-w-none w-auto h-auto object-contain transition-transform duration-100 select-none"
                style="max-height: 85vh; max-width: 95vw;">
         </div>
         
-        <!-- 좌우 슬라이드 버튼 (확대하지 않았거나 기본 상태일 때 유용) -->
+        <!-- 좌우 슬라이드 버튼 -->
         <button v-if="modalImages.length > 1" @click.stop="prevModalImage" class="absolute left-3 top-1/2 -translate-y-1/2 bg-black/70 hover:bg-accent hover:text-zinc-950 text-white w-10 h-10 rounded-full flex items-center justify-center text-base shadow transition z-10">❮</button>
         <button v-if="modalImages.length > 1" @click.stop="nextModalImage" class="absolute right-3 top-1/2 -translate-y-1/2 bg-black/70 hover:bg-accent hover:text-zinc-950 text-white w-10 h-10 rounded-full flex items-center justify-center text-base shadow transition z-10">❯</button>
       </div>
@@ -546,6 +546,7 @@
 
           let touchStartX = 0;
           let touchStartY = 0;
+          let isPinching = false; // 핀치 줌 상태를 추적하는 플래그
 
           const today = new Date();
           const calendarYear = ref(today.getFullYear());
@@ -646,15 +647,27 @@
           };
 
           const handleModalTouchStart = (e) => {
+            if (e.touches.length > 1) {
+              isPinching = true;
+            }
             touchStartX = e.touches[0].clientX;
             touchStartY = e.touches[0].clientY;
           };
 
+          const handleModalTouchMove = (e) => {
+            if (e.touches.length > 1) {
+              isPinching = true;
+            }
+          };
+
           const handleModalTouchEnd = (e) => {
-            // 두 손가락 이상(핀치 줌 조작 중이거나 조작 직후)일 때는 절대 옆 이미지로 넘어가지 않도록 완전히 차단
-            if (e.touches.length > 0 || e.changedTouches.length > 1) {
+            if (isPinching || e.touches.length > 0 || e.changedTouches.length > 1) {
+              if (e.touches.length === 0) {
+                isPinching = false;
+              }
               return;
             }
+
             const deltaX = e.changedTouches[0].clientX - touchStartX;
             const deltaY = e.changedTouches[0].clientY - touchStartY;
             if (Math.abs(deltaX) > 50 && Math.abs(deltaX) > Math.abs(deltaY)) {
@@ -944,7 +957,7 @@
             calendarYear, calendarMonth, calendarDays, dailyPnlMap, prevMonth, nextMonth, selectDateFromCalendar, selectTrade, clearFilters,
             openModal, closeModal, saveTrade, deleteTrade, handleFileUpload, handleDrop, handlePaste, removeFormImage,
             prevDetailImage, nextDetailImage, openImageModal, closeImageModal, prevModalImage, nextModalImage,
-            handleTouchStart, handleDetailTouchEnd, handleModalTouchStart, handleModalTouchEnd,
+            handleTouchStart, handleDetailTouchEnd, handleModalTouchStart, handleModalTouchMove, handleModalTouchEnd,
             exportJSON, exportCSV, importJSON, theme, setTheme, timeframes
           };
         }
