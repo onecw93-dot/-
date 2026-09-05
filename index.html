@@ -36,15 +36,15 @@
     }
   </script>
   <style>
-    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; -webkit-tap-highlight-color: transparent; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; -webkit-tap-highlight-color: transparent; width: 100%; overflow-x: hidden; }
     input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(0.8); cursor: pointer; width: 100%; height: 100%; position: absolute; right: 0; top: 0; opacity: 0; }
     ::-webkit-scrollbar { width: 4px; height: 4px; }
     ::-webkit-scrollbar-thumb { background: #484848; border-radius: 3px; }
     ::-webkit-scrollbar-track { background: transparent; }
   </style>
 </head>
-<body class="bg-zinc-100 dark:bg-darkBg text-zinc-800 dark:text-zinc-100 p-3 sm:p-6 md:p-8 min-h-screen transition-colors duration-200">
-  <div id="app" class="max-w-6xl mx-auto space-y-4 sm:space-y-5">
+<body class="bg-zinc-100 dark:bg-darkBg text-zinc-800 dark:text-zinc-100 p-2 sm:p-5 md:p-8 min-h-screen transition-colors duration-200">
+  <div id="app" class="max-w-6xl mx-auto space-y-3 sm:space-y-5 w-full">
     
     <header class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 pb-3 border-b border-zinc-200 dark:border-darkBorder">
       <div>
@@ -67,27 +67,27 @@
       </div>
     </header>
 
-    <section class="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3">
-      <div class="bg-white dark:bg-darkCard border border-zinc-200 dark:border-darkBorder p-3 rounded-xl shadow-sm">
+    <section class="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
+      <div class="bg-white dark:bg-darkCard border border-zinc-200 dark:border-darkBorder p-2.5 sm:p-3 rounded-xl shadow-sm">
         <span class="text-[10px] sm:text-[11px] text-zinc-500 dark:text-zinc-400 block">총 손익</span>
         <span class="text-base sm:text-lg font-bold font-mono" :class="stats.totalPnl > 0 ? 'text-accent' : stats.totalPnl < 0 ? 'text-rose-500' : 'text-zinc-400'">
           ${{ stats.totalPnl.toFixed(2) }}
         </span>
       </div>
-      <div class="bg-white dark:bg-darkCard border border-zinc-200 dark:border-darkBorder p-3 rounded-xl shadow-sm">
+      <div class="bg-white dark:bg-darkCard border border-zinc-200 dark:border-darkBorder p-2.5 sm:p-3 rounded-xl shadow-sm">
         <span class="text-[10px] sm:text-[11px] text-zinc-500 dark:text-zinc-400 block">승률</span>
         <div class="flex items-baseline gap-1">
           <span class="text-base sm:text-lg font-bold font-mono text-accent">{{ stats.winRate.toFixed(1) }}%</span>
           <span class="text-[9px] sm:text-[10px] text-zinc-400">({{ stats.winCount }}승 {{ stats.lossCount }}패)</span>
         </div>
       </div>
-      <div class="bg-white dark:bg-darkCard border border-zinc-200 dark:border-darkBorder p-3 rounded-xl shadow-sm">
+      <div class="bg-white dark:bg-darkCard border border-zinc-200 dark:border-darkBorder p-2.5 sm:p-3 rounded-xl shadow-sm">
         <span class="text-[10px] sm:text-[11px] text-zinc-500 dark:text-zinc-400 block">평균 손익</span>
         <span class="text-base sm:text-lg font-bold font-mono" :class="stats.avgPnl > 0 ? 'text-accent' : stats.avgPnl < 0 ? 'text-rose-500' : 'text-zinc-400'">
           ${{ stats.avgPnl.toFixed(2) }}
         </span>
       </div>
-      <div class="bg-white dark:bg-darkCard border border-zinc-200 dark:border-darkBorder p-3 rounded-xl shadow-sm">
+      <div class="bg-white dark:bg-darkCard border border-zinc-200 dark:border-darkBorder p-2.5 sm:p-3 rounded-xl shadow-sm">
         <span class="text-[10px] sm:text-[11px] text-zinc-500 dark:text-zinc-400 block">최대 손익</span>
         <div class="text-xs font-mono font-semibold flex gap-2 mt-0.5">
           <span class="text-accent">+${{ stats.maxWin.toFixed(0) }}</span>
@@ -115,7 +115,7 @@
           <div v-for="(day, idx) in calendarDays" :key="idx" 
                @click="day.isCurrentMonth && selectDateFromCalendar(day.dateStr)"
                :class="[
-                 'h-10 sm:h-12 p-0.5 sm:p-1 rounded transition flex flex-col justify-between text-xs border',
+                 'h-9 sm:h-12 p-0.5 sm:p-1 rounded transition flex flex-col justify-between text-xs border',
                  day.isCurrentMonth ? 'cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-800/80' : 'opacity-25 pointer-events-none',
                  selectedTrade && selectedTrade.trade_date === day.dateStr ? 'bg-accent/10 border-accent shadow-sm' : 'border-transparent bg-zinc-50/50 dark:bg-[#202020]'
                ]">
@@ -134,15 +134,15 @@
           <span class="text-xs font-bold text-zinc-600 dark:text-zinc-300 tracking-wider">P&L TREND</span>
           <span class="text-[10px] font-mono text-zinc-400">Cumulative</span>
         </div>
-        <div class="flex-1 min-h-[180px] sm:min-h-[220px] pt-2 relative flex items-center">
+        <div class="flex-1 min-h-[160px] sm:min-h-[220px] pt-2 relative flex items-center">
           <canvas id="pnlChart"></canvas>
         </div>
       </div>
     </section>
 
-    <section id="detail-card" v-if="selectedTrade" class="bg-white dark:bg-darkCard border border-accent/40 rounded-xl p-4 sm:p-5 shadow-md space-y-3.5">
+    <section id="detail-card" v-if="selectedTrade" class="bg-white dark:bg-darkCard border border-accent/40 rounded-xl p-3 sm:p-5 shadow-md space-y-3.5">
       <div class="flex justify-between items-center pb-2.5 border-b border-zinc-200 dark:border-darkBorder">
-        <div class="flex flex-wrap items-center gap-2">
+        <div class="flex flex-wrap items-center gap-1.5 sm:gap-2">
           <span class="text-xs text-accent font-bold">DETAIL</span>
           <span class="text-xs font-mono text-zinc-400">{{ selectedTrade.trade_date }}</span>
           <span class="text-xs font-bold text-zinc-800 dark:text-white">{{ selectedTrade.symbol }}</span>
@@ -153,7 +153,7 @@
             RR {{ formatRR(selectedTrade.rr) }}
           </span>
         </div>
-        <div class="flex items-center gap-1 sm:gap-2">
+        <div class="flex items-center gap-1">
           <button @click="openModal(selectedTrade)" class="text-xs text-zinc-400 hover:text-zinc-900 dark:hover:text-white p-1">수정</button>
           <button @click="deleteTrade(selectedTrade.id)" class="text-xs text-rose-500 hover:text-rose-400 p-1">삭제</button>
           <button @click="selectedTrade = null" class="text-xs text-zinc-400 hover:text-zinc-200 p-1 ml-1">✕</button>
@@ -188,7 +188,7 @@
 
           <div>
             <span class="text-[11px] font-bold text-zinc-500 dark:text-zinc-400 block mb-1">복기 및 메모</span>
-            <div class="p-3 bg-zinc-50 dark:bg-[#202020] rounded-xl text-xs text-zinc-700 dark:text-zinc-300 min-h-[180px] whitespace-pre-wrap leading-relaxed border border-zinc-200 dark:border-darkBorder">
+            <div class="p-3 bg-zinc-50 dark:bg-[#202020] rounded-xl text-xs text-zinc-700 dark:text-zinc-300 min-h-[140px] whitespace-pre-wrap leading-relaxed border border-zinc-200 dark:border-darkBorder">
               {{ selectedTrade.notes || '기록 없음' }}
             </div>
           </div>
@@ -203,14 +203,14 @@
             </div>
           </div>
 
-          <div class="bg-zinc-50 dark:bg-[#202020] p-3 rounded-xl border border-zinc-200 dark:border-darkBorder flex-1 flex flex-col justify-between relative min-h-[320px] sm:min-h-[380px]"
+          <div class="bg-zinc-50 dark:bg-[#202020] p-3 rounded-xl border border-zinc-200 dark:border-darkBorder flex-1 flex flex-col justify-between relative min-h-[280px] sm:min-h-[350px]"
                @touchstart="handleTouchStart" @touchend="handleDetailTouchEnd">
             <div class="relative flex-1 flex items-center justify-center select-none overflow-hidden my-auto py-2">
               <template v-if="selectedTradeImages.length > 0">
                 <div class="grid gap-3 w-full h-full items-center justify-items-center" :class="visibleDetailImages.length > 1 ? 'grid-cols-2' : 'grid-cols-1'">
                   <div v-for="(imgUrl, idx) in visibleDetailImages" :key="idx" class="flex items-center justify-center w-full h-full bg-zinc-200/50 dark:bg-black/20 rounded p-1.5 relative group">
                     <img :src="imgUrl" @click="openImageModal(selectedTradeImages, activeImageIndex + idx)" 
-                         class="max-h-[320px] sm:max-h-[380px] w-full object-contain cursor-pointer hover:opacity-90 transition">
+                         class="max-h-[280px] sm:max-h-[350px] w-full object-contain cursor-pointer hover:opacity-90 transition">
                   </div>
                 </div>
                 <button v-if="selectedTradeImages.length > 1" @click="prevDetailImage" class="absolute left-1 top-1/2 -translate-y-1/2 bg-black/70 hover:bg-accent hover:text-zinc-950 text-white w-7 h-7 rounded-full text-xs flex items-center justify-center shadow transition">❮</button>
@@ -463,7 +463,7 @@
 
           <div>
             <label class="block text-[10px] text-zinc-500 dark:text-zinc-400 mb-1">복기 및 메모</label>
-            <textarea v-model="form.notes" rows="6" class="w-full p-2 text-xs rounded bg-white dark:bg-[#1a1a1a] border border-zinc-300 dark:border-[#3a3a3a] focus:border-accent focus:ring-1 focus:ring-accent outline-none leading-relaxed text-zinc-800 dark:text-zinc-100 transition"></textarea>
+            <textarea v-model="form.notes" rows="5" class="w-full p-2 text-xs rounded bg-white dark:bg-[#1a1a1a] border border-zinc-300 dark:border-[#3a3a3a] focus:border-accent focus:ring-1 focus:ring-accent outline-none leading-relaxed text-zinc-800 dark:text-zinc-100 transition"></textarea>
           </div>
 
           <div class="flex justify-end gap-2 pt-2 border-t border-zinc-200 dark:border-darkBorder">
