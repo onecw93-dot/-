@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
   <title>Trading Journal</title>
   <script>
     (function() {
@@ -474,16 +474,36 @@
       </div>
     </div>
 
-    <!-- 이미지 확대 모달 (웹창 크기에 꽉 차도록 수정됨) -->
-    <div v-if="modalImages.length > 0" class="fixed inset-0 bg-black/95 flex items-center justify-center p-1 sm:p-3 z-50 select-none" 
-         @click="closeImageModal" @touchstart="handleTouchStart" @touchend="handleModalTouchEnd">
-      <div class="relative w-full h-full flex items-center justify-center p-2 sm:p-6" @click.stop>
-        <img :src="modalImages[modalActiveIndex]" class="max-h-[96vh] max-w-[96vw] w-auto h-auto object-contain rounded shadow-2xl">
-        <button v-if="modalImages.length > 1" @click="prevModalImage" class="absolute left-3 top-1/2 -translate-y-1/2 bg-black/70 hover:bg-accent hover:text-zinc-950 text-white w-10 h-10 rounded-full flex items-center justify-center text-base shadow transition">❮</button>
-        <button v-if="modalImages.length > 1" @click="nextModalImage" class="absolute right-3 top-1/2 -translate-y-1/2 bg-black/70 hover:bg-accent hover:text-zinc-950 text-white w-10 h-10 rounded-full flex items-center justify-center text-base shadow transition">❯</button>
-        <div class="absolute top-3 right-3">
-          <button @click="closeImageModal" class="bg-black/70 hover:bg-rose-600 text-white w-9 h-9 rounded-full flex items-center justify-center text-sm shadow transition">✕</button>
+    <!-- 이미지 확대 모달 (모바일 확대/축소 지원 개선 버전) -->
+    <div v-if="modalImages.length > 0" class="fixed inset-0 bg-black/95 z-50 flex flex-col select-none">
+      <!-- 상단 컨트롤 바 -->
+      <div class="flex justify-between items-center p-3 sm:p-4 bg-black/40 backdrop-blur-md z-10">
+        <span class="text-xs font-mono text-zinc-300">{{ modalActiveIndex + 1 }} / {{ modalImages.length }}</span>
+        <div class="flex items-center gap-2">
+          <span class="text-[10px] text-zinc-400 hidden sm:inline">두 손가락으로 확대/축소 가능</span>
+          <button @click="closeImageModal" class="bg-white/10 hover:bg-rose-600 text-white w-8 h-8 rounded-full flex items-center justify-center text-sm shadow transition">✕</button>
         </div>
+      </div>
+
+      <!-- 스크롤 및 핀치 줌이 가능한 컨테이너 -->
+      <div class="relative flex-1 overflow-auto flex items-center justify-center p-1 sm:p-6" 
+           @touchstart="handleTouchStart" @touchend="handleModalTouchEnd">
+        <div class="w-full h-full flex items-center justify-center min-h-[50vh]">
+          <img :src="modalImages[modalActiveIndex]" 
+               class="max-w-none w-auto h-auto object-contain transition-transform duration-100 select-none"
+               style="max-height: 85vh; max-width: 95vw;">
+        </div>
+        
+        <!-- 좌우 슬라이드 버튼 (확대하지 않았거나 기본 상태일 때 유용) -->
+        <button v-if="modalImages.length > 1" @click.stop="prevModalImage" class="absolute left-3 top-1/2 -translate-y-1/2 bg-black/70 hover:bg-accent hover:text-zinc-950 text-white w-10 h-10 rounded-full flex items-center justify-center text-base shadow transition z-10">❮</button>
+        <button v-if="modalImages.length > 1" @click.stop="nextModalImage" class="absolute right-3 top-1/2 -translate-y-1/2 bg-black/70 hover:bg-accent hover:text-zinc-950 text-white w-10 h-10 rounded-full flex items-center justify-center text-base shadow transition z-10">❯</button>
+      </div>
+      
+      <!-- 하단 썸네일 네비게이터 -->
+      <div v-if="modalImages.length > 1" class="flex gap-1.5 p-3 bg-black/60 backdrop-blur-md overflow-x-auto justify-center items-center z-10">
+        <img v-for="(img, idx) in modalImages" :key="idx" :src="img" @click="modalActiveIndex = idx"
+             :class="modalActiveIndex === idx ? 'border-accent opacity-100 scale-105' : 'border-transparent opacity-40'"
+             class="w-10 h-10 object-cover rounded border cursor-pointer flex-shrink-0 transition">
       </div>
     </div>
 
@@ -626,10 +646,13 @@
           };
 
           const handleModalTouchEnd = (e) => {
-            const deltaX = e.changedTouches[0].clientX - touchStartX;
-            const deltaY = e.changedTouches[0].clientY - touchStartY;
-            if (Math.abs(deltaX) > 40 && Math.abs(deltaX) > Math.abs(deltaY)) {
-              if (deltaX < 0) nextModalImage(); else prevModalImage();
+            // 모달 스와이프는 터치 포인트가 1개일 때만 작동 (확대 상태에서의 이동 방해 방지)
+            if (e.changedTouches.length === 1) {
+              const deltaX = e.changedTouches[0].clientX - touchStartX;
+              const deltaY = e.changedTouches[0].clientY - touchStartY;
+              if (Math.abs(deltaX) > 50 && Math.abs(deltaX) > Math.abs(deltaY)) {
+                if (deltaX < 0) nextModalImage(); else prevModalImage();
+              }
             }
           };
 
@@ -889,7 +912,7 @@
             const headers = ['id', 'trade_date', 'symbol', 'direction', 'pnl', 'rr', 'result', 'reason', 'notes'];
             const rows = trades.value.map(t => headers.map(h => `"${t[h] || ''}"`).join(','));
             const blob = new Blob(['\uFEFF' + [headers.join(','), ...rows].join('\n')], { type: 'text/csv;' });
-            const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `journal_${new Date().toISOString().substring(0,10)}.csv`; a.click();
+            const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `journal_${new Date().toISOString().substring(0,10)}.json`.replace('.json', '.csv'); a.click();
           };
 
           const importJSON = (e) => {
