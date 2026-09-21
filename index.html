@@ -202,10 +202,26 @@
                 </select>
                 <select v-model="liveCheck.ltf_opt" class="w-2/3 p-1 text-xs rounded bg-white dark:bg-[#1a1a1a] border border-zinc-300 dark:border-[#3a3a3a] text-customOrange font-semibold outline-none">
                   <option value="">선택</option>
-                  <option value="BOS">BOS</option><option value="RANGE REVERSAL">RANGE REVERSAL</option><option value="SMS">SMS</option><option value="PO3">PO3</option>
+                  <option value="BOS">BOS</option>
+                  <option value="RANGE REVERSAL">RANGE REVERSAL</option>
+                  <option value="SMS">SMS</option>
+                  <option value="PO3">PO3</option>
                 </select>
               </div>
             </div>
+
+            <!-- 📌 진입 피보나치 항목 -->
+            <div class="p-2 bg-zinc-50 dark:bg-[#202020] rounded-lg border border-customOrange/30 space-y-1">
+              <label class="block text-[10px] font-bold text-customOrange">진입 피보나치</label>
+              <select v-model="liveCheck.fibo_opt" class="w-full p-1.5 text-xs rounded bg-white dark:bg-[#1a1a1a] border border-zinc-300 dark:border-[#3a3a3a] text-customOrange font-semibold outline-none">
+                <option value="">선택</option>
+                <option value="0.5">0.5</option>
+                <option value="0.62">0.62</option>
+                <option value="0.705">0.705</option>
+                <option value="0.79">0.79</option>
+              </select>
+            </div>
+
           </div>
 
           <div class="pt-2 border-t border-zinc-200 dark:border-darkBorder text-xs space-y-2">
@@ -305,7 +321,8 @@
               <div><span class="text-zinc-400 text-[10px]">LQ:</span> <span class="text-customOrange font-semibold">{{ getSmcData(selectedTrade).lq || '-' }}</span></div>
               <div><span class="text-zinc-400 text-[10px]">POI:</span> <span class="text-customOrange font-semibold">{{ getSmcData(selectedTrade).poi || '-' }}</span></div>
               <div><span class="text-zinc-400 text-[10px]">PD/OTE:</span> <span class="text-customOrange font-semibold">{{ getSmcData(selectedTrade).pd || '-' }}</span></div>
-              <div class="col-span-2 pt-0.5"><span class="text-zinc-400 text-[10px]">LTF EM:</span> <span class="text-customOrange font-semibold">{{ getSmcData(selectedTrade).ltf || '-' }}</span></div>
+              <div><span class="text-zinc-400 text-[10px]">LTF EM:</span> <span class="text-customOrange font-semibold">{{ getSmcData(selectedTrade).ltf || '-' }}</span></div>
+              <div><span class="text-zinc-400 text-[10px]">FIBO:</span> <span class="text-customOrange font-semibold">{{ getSmcData(selectedTrade).fibo || '-' }}</span></div>
             </div>
           </div>
 
@@ -379,7 +396,7 @@
               <th class="p-3">날짜</th>
               <th class="p-3">종목</th>
               <th class="p-3">방향</th>
-              <th class="p-3">SMC 셋업 (POI / EM)</th>
+              <th class="p-3">SMC 셋업 (POI / EM / Fibo)</th>
               <th class="p-3">손익비</th>
               <th class="p-3">손익 ($)</th>
               <th class="p-3">결과</th>
@@ -405,6 +422,7 @@
                 <span class="text-customOrange font-semibold">{{ getSmcData(trade).poi || '-' }}</span> 
                 <span class="text-zinc-400 px-1">/</span> 
                 <span class="text-customOrange font-semibold">{{ getSmcData(trade).ltf || '-' }}</span>
+                <span v-if="getSmcData(trade).fibo" class="text-accent ml-1 font-semibold">({{ getSmcData(trade).fibo }})</span>
               </td>
               <td class="p-3 font-mono text-accent">{{ formatRR(trade.rr) }}</td>
               <td class="p-3 font-mono font-bold" :class="trade.pnl > 0 ? 'text-accent' : trade.pnl < 0 ? 'text-rose-500' : 'text-zinc-400'">
@@ -526,19 +544,35 @@
                 </div>
               </div>
 
-              <div class="sm:col-span-2">
+              <div>
                 <label class="block text-[9px] text-zinc-500 dark:text-zinc-400 mb-1">LTF EM (Entry Model)</label>
                 <div class="flex gap-1">
-                  <select v-model="form.smc_ltf_tf" class="w-1/4 p-1.5 text-xs rounded bg-white dark:bg-[#1a1a1a] border border-zinc-300 dark:border-[#3a3a3a] focus:border-accent focus:ring-1 focus:ring-accent outline-none text-customOrange font-semibold transition">
+                  <select v-model="form.smc_ltf_tf" class="w-1/3 p-1.5 text-xs rounded bg-white dark:bg-[#1a1a1a] border border-zinc-300 dark:border-[#3a3a3a] focus:border-accent focus:ring-1 focus:ring-accent outline-none text-customOrange font-semibold transition">
                     <option value="">TF</option>
                     <option v-for="tf in timeframes" :key="tf" :value="tf">{{ tf }}</option>
                   </select>
-                  <select v-model="form.smc_ltf_opt" class="w-3/4 p-1.5 text-xs rounded bg-white dark:bg-[#1a1a1a] border border-zinc-300 dark:border-[#3a3a3a] focus:border-accent focus:ring-1 focus:ring-accent outline-none text-customOrange font-semibold transition">
+                  <select v-model="form.smc_ltf_opt" class="w-2/3 p-1.5 text-xs rounded bg-white dark:bg-[#1a1a1a] border border-zinc-300 dark:border-[#3a3a3a] focus:border-accent focus:ring-1 focus:ring-accent outline-none text-customOrange font-semibold transition">
                     <option value="">선택</option>
-                    <option value="BOS">BOS</option><option value="RANGE REVERSAL">RANGE REVERSAL</option><option value="SMS">SMS</option><option value="PO3">PO3</option>
+                    <option value="BOS">BOS</option>
+                    <option value="RANGE REVERSAL">RANGE REVERSAL</option>
+                    <option value="SMS">SMS</option>
+                    <option value="PO3">PO3</option>
                   </select>
                 </div>
               </div>
+
+              <!-- 📌 모달 내부 진입 피보나치 항목 -->
+              <div>
+                <label class="block text-[9px] text-customOrange font-bold mb-1">진입 피보나치</label>
+                <select v-model="form.smc_fibo_opt" class="w-full p-1.5 text-xs rounded bg-white dark:bg-[#1a1a1a] border border-zinc-300 dark:border-[#3a3a3a] focus:border-accent focus:ring-1 focus:ring-accent outline-none text-customOrange font-semibold transition">
+                  <option value="">선택</option>
+                  <option value="0.5">0.5</option>
+                  <option value="0.62">0.62</option>
+                  <option value="0.705">0.705</option>
+                  <option value="0.79">0.79</option>
+                </select>
+              </div>
+
             </div>
           </div>
 
@@ -631,11 +665,12 @@
             lq_opt1: '', lq_opt2: '',
             poi_tf: '', poi_opt: '',
             pd_opt1: '', pd_opt2: '',
-            ltf_tf: '', ltf_opt: ''
+            ltf_tf: '', ltf_opt: '',
+            fibo_opt: ''
           });
 
           const resetLiveChecker = () => {
-            liveCheck.value = { ms_tf: '', ms_opt: '', lq_opt1: '', lq_opt2: '', poi_tf: '', poi_opt: '', pd_opt1: '', pd_opt2: '', ltf_tf: '', ltf_opt: '' };
+            liveCheck.value = { ms_tf: '', ms_opt: '', lq_opt1: '', lq_opt2: '', poi_tf: '', poi_opt: '', pd_opt1: '', pd_opt2: '', ltf_tf: '', ltf_opt: '', fibo_opt: '' };
           };
 
           const applyToChecklistForm = () => {
@@ -650,6 +685,7 @@
             form.value.smc_pd_opt2 = liveCheck.value.pd_opt2;
             form.value.smc_ltf_tf = liveCheck.value.ltf_tf;
             form.value.smc_ltf_opt = liveCheck.value.ltf_opt;
+            form.value.smc_fibo_opt = liveCheck.value.fibo_opt;
           };
 
           const theme = ref(localStorage.getItem('theme') || 'dark');
@@ -680,7 +716,8 @@
             smc_lq_opt1: '', smc_lq_opt2: '',
             smc_poi_tf: '', smc_poi_opt: '',
             smc_pd_opt1: '', smc_pd_opt2: '',
-            smc_ltf_tf: '', smc_ltf_opt: ''
+            smc_ltf_tf: '', smc_ltf_opt: '',
+            smc_fibo_opt: ''
           });
 
           const form = ref(defaultForm());
@@ -717,6 +754,7 @@
                     poi: formatPair(parsed.poi_tf, parsed.poi_opt),
                     pd: formatPd(parsed.pd_opt1, parsed.pd_opt2),
                     ltf: formatPair(parsed.ltf_tf, parsed.ltf_opt),
+                    fibo: parsed.fibo_opt || '',
                     raw: parsed
                   };
                 }
@@ -730,6 +768,7 @@
               poi: text.includes('POI') ? (text.split('POI')[1]?.split('\n')[0]?.replace(/[:=]/g, '').trim() || '') : '',
               pd: text.includes('PD') ? (text.split('PD')[1]?.split('\n')[0]?.replace(/[:=]/g, '').trim() || '') : '',
               ltf: text.includes('LTF') ? (text.split('LTF')[1]?.split('\n')[0]?.replace(/[:=]/g, '').trim() || '') : '',
+              fibo: ''
             };
           };
 
@@ -967,7 +1006,8 @@
                 smc_pd_opt1: rawSmc.pd_opt1 || '',
                 smc_pd_opt2: rawSmc.pd_opt2 || '',
                 smc_ltf_tf: rawSmc.ltf_tf || '',
-                smc_ltf_opt: rawSmc.ltf_opt || ''
+                smc_ltf_opt: rawSmc.ltf_opt || '',
+                smc_fibo_opt: rawSmc.fibo_opt || ''
               };
             } else {
               isEditing.value = false; editingId.value = null;
@@ -989,7 +1029,8 @@
               pd_opt1: form.value.smc_pd_opt1,
               pd_opt2: form.value.smc_pd_opt2,
               ltf_tf: form.value.smc_ltf_tf,
-              ltf_opt: form.value.smc_ltf_opt
+              ltf_opt: form.value.smc_ltf_opt,
+              fibo_opt: form.value.smc_fibo_opt
             };
 
             const payload = {
