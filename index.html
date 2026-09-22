@@ -262,7 +262,7 @@
             <span v-if="day.isCurrentMonth && dailyPnlMap[day.dateStr] !== undefined" 
                   class="text-right font-mono font-bold text-[8px] sm:text-[9px] truncate"
                   :class="dailyPnlMap[day.dateStr] > 0 ? 'text-accent' : dailyPnlMap[day.dateStr] < 0 ? 'text-rose-500' : 'text-zinc-400'">
-              {{ dailyPnlMap[day.dateStr] > 0 ? '+' : '' }}{{ dailyPnlMap[day.dateStr] }}
+              {{ dailyPnlMap[day.dateStr] > 0 ? '+' : '' }}{{ dailyPnlMap[day.dateStr].toFixed(2) }}
             </span>
           </div>
         </div>
