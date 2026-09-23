@@ -130,7 +130,7 @@
 
       </div>
 
-      <!-- 2. 가운데 영역: 탑다운 분석 리스트 -->
+      <!-- 2. 가운데 영역: 탑다운 분석 리스트 및 선택 결과 출력 상자 -->
       <div class="w-full xl:w-[380px] xl:sticky xl:top-4 space-y-3">
         <section class="bg-white dark:bg-darkCard border border-accent/40 p-3.5 sm:p-4 rounded-xl shadow-sm space-y-3">
           <div class="flex justify-between items-center pb-2 border-b border-zinc-200 dark:border-darkBorder">
@@ -141,28 +141,51 @@
           </div>
 
           <div class="space-y-2">
-            <div v-for="tf in ['1M', '1W', '1D', '4H', '1H']" :key="tf" class="p-2 bg-zinc-50 dark:bg-[#202020] rounded-lg border border-zinc-200 dark:border-darkBorder space-y-1.5">
-              <div class="flex items-center justify-between">
-                <span class="text-xs font-bold font-mono text-accent">{{ tf }}</span>
-              </div>
-              <div class="grid grid-cols-4 gap-1">
-                <select v-model="topDown[tf].opt1" class="p-1 text-[11px] rounded bg-white dark:bg-[#1a1a1a] border border-zinc-300 dark:border-[#3a3a3a] text-zinc-200 font-semibold outline-none">
+            <div v-for="tf in ['1M', '1W', '1D', '4H', '1H']" :key="tf" class="flex items-center gap-2 p-2 bg-zinc-50 dark:bg-[#202020] rounded-lg border border-zinc-200 dark:border-darkBorder">
+              <div class="bg-[#1a1a1a] text-white font-bold px-2 py-1 rounded text-xs border border-[#333] min-w-[36px] text-center font-mono">{{ tf }}</div>
+              <div class="grid grid-cols-4 gap-1 flex-1">
+                <select v-model="topDown[tf].opt1" class="p-1 text-[11px] rounded bg-white dark:bg-[#1a1a1a] border border-zinc-300 dark:border-[#3a3a3a] text-customOrange font-semibold outline-none">
                   <option value="">선택</option>
                   <option value="L">L</option><option value="S">S</option><option value="R">R</option>
                 </select>
-                <select v-model="topDown[tf].opt2" class="p-1 text-[11px] rounded bg-white dark:bg-[#1a1a1a] border border-zinc-300 dark:border-[#3a3a3a] text-zinc-200 font-semibold outline-none">
+                <select v-model="topDown[tf].opt2" class="p-1 text-[11px] rounded bg-white dark:bg-[#1a1a1a] border border-zinc-300 dark:border-[#3a3a3a] text-customOrange font-semibold outline-none">
                   <option value="">선택</option>
                   <option value="IRL">IRL</option><option value="ERL">ERL</option><option value="PDH LG">PDH LG</option><option value="PDL LG">PDL LG</option><option value="ASIA H LG">ASIA H LG</option><option value="ASIA L LG">ASIA L LG</option><option value="LUNDUN H LG">LUNDUN H LG</option><option value="LUNDUN L LG">LUNDUN L LG</option>
                 </select>
-                <select v-model="topDown[tf].opt3" class="p-1 text-[11px] rounded bg-white dark:bg-[#1a1a1a] border border-zinc-300 dark:border-[#3a3a3a] text-zinc-200 font-semibold outline-none">
+                <select v-model="topDown[tf].opt3" class="p-1 text-[11px] rounded bg-white dark:bg-[#1a1a1a] border border-zinc-300 dark:border-[#3a3a3a] text-customOrange font-semibold outline-none">
                   <option value="">선택</option>
                   <option value="OB">OB</option><option value="IMB">IMB</option><option value="BB">BB</option><option value="RB">RB</option>
                 </select>
-                <select v-model="topDown[tf].opt4" class="p-1 text-[11px] rounded bg-white dark:bg-[#1a1a1a] border border-zinc-300 dark:border-[#3a3a3a] text-zinc-200 font-semibold outline-none">
+                <select v-model="topDown[tf].opt4" class="p-1 text-[11px] rounded bg-white dark:bg-[#1a1a1a] border border-zinc-300 dark:border-[#3a3a3a] text-customOrange font-semibold outline-none">
                   <option value="">선택</option>
                   <option value="P">P</option><option value="D">D</option><option value="0.5">0.5</option><option value="0.62">0.62</option><option value="0.705">0.705</option><option value="0.709">0.709</option>
                 </select>
               </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 탑다운 선택 상태 실시간 표기 영역 -->
+        <section class="bg-white dark:bg-darkCard border border-white/40 p-3.5 sm:p-4 rounded-xl shadow-sm space-y-2">
+          <div class="flex justify-between items-center pb-2 border-b border-zinc-200 dark:border-darkBorder">
+            <span class="text-xs font-bold text-zinc-300 tracking-wider">🎯 TOP-DOWN SUMMARY</span>
+          </div>
+          <div class="space-y-2.5 min-h-[110px] text-xs font-mono">
+            <template v-if="hasAnyTopDownSelected">
+              <template v-for="(data, tf) in topDown" :key="tf">
+                <div v-if="data.opt1 || data.opt2 || data.opt3 || data.opt4" class="flex items-center gap-2 p-2 bg-zinc-50 dark:bg-[#202020] rounded-lg border border-zinc-200 dark:border-darkBorder">
+                  <div class="bg-[#1a1a1a] text-white font-bold px-2 py-1 rounded text-xs border border-[#333] min-w-[36px] text-center font-mono">{{ tf }}</div>
+                  <div class="flex items-center gap-1.5 text-customOrange font-semibold flex-wrap justify-start flex-1">
+                    <span v-if="data.opt1" class="p-1 text-xs rounded bg-white dark:bg-[#1a1a1a] border border-zinc-300 dark:border-[#3a3a3a] px-2">{{ data.opt1 }}</span>
+                    <span v-if="data.opt2" class="p-1 text-xs rounded bg-white dark:bg-[#1a1a1a] border border-zinc-300 dark:border-[#3a3a3a] px-2">{{ data.opt2 }}</span>
+                    <span v-if="data.opt3" class="p-1 text-xs rounded bg-white dark:bg-[#1a1a1a] border border-zinc-300 dark:border-[#3a3a3a] px-2">{{ data.opt3 }}</span>
+                    <span v-if="data.opt4" class="p-1 text-xs rounded bg-white dark:bg-[#1a1a1a] border border-zinc-300 dark:border-[#3a3a3a] px-2">{{ data.opt4 }}</span>
+                  </div>
+                </div>
+              </template>
+            </template>
+            <div v-else class="text-zinc-500 text-center py-6 text-xs">
+              선택된 탑다운 옵션이 없습니다.
             </div>
           </div>
         </section>
@@ -300,7 +323,7 @@
                ]">
             <span class="text-[9px] sm:text-[10px] font-mono text-zinc-400">{{ day.dayNum }}</span>
             <span v-if="day.isCurrentMonth && dailyPnlMap[day.dateStr] !== undefined" 
-                  class="text-right font-mono font-bold text-[8px] sm:text-[9px] truncate"
+                  class="text-right font-mono font-bold text-[10px] sm:text-xs truncate"
                   :class="dailyPnlMap[day.dateStr] > 0 ? 'text-accent' : dailyPnlMap[day.dateStr] < 0 ? 'text-rose-500' : 'text-zinc-400'">
               {{ dailyPnlMap[day.dateStr] > 0 ? '+' : '' }}{{ dailyPnlMap[day.dateStr].toFixed(2) }}
             </span>
@@ -488,29 +511,34 @@
       </div>
     </section>
 
-    <!-- 계정 이름 일괄 변경 관리 모달 -->
+    <!-- 계정 이름 일괄 변경 및 전체 삭제 관리 모달 -->
     <div v-if="showAccountModal" class="fixed inset-0 bg-black/80 flex items-center justify-center p-3 sm:p-4 z-50">
       <div class="bg-white dark:bg-darkCard border border-accent/40 rounded-xl p-4 sm:p-5 max-w-sm w-full space-y-4 shadow-xl">
         <div class="flex justify-between items-center pb-2 border-b border-zinc-200 dark:border-darkBorder">
-          <h3 class="text-sm font-bold text-zinc-800 dark:text-white">⚙️ 계정 이름 일괄 관리</h3>
+          <h3 class="text-sm font-bold text-zinc-800 dark:text-white">⚙️ 계정 및 기록 관리</h3>
           <button @click="showAccountModal = false" class="text-zinc-400 hover:text-zinc-200 p-1">✕</button>
         </div>
         <div class="space-y-3 text-xs">
           <div>
-            <label class="block text-zinc-400 mb-1">변경할 기존 계정 이름</label>
+            <label class="block text-zinc-400 mb-1">대상 계정 선택</label>
             <select v-model="accountManager.target" class="w-full p-2 rounded bg-zinc-100 dark:bg-[#1a1a1a] border border-zinc-300 dark:border-[#3a3a3a] text-zinc-800 dark:text-zinc-100 outline-none">
               <option value="" disabled>선택하세요</option>
               <option v-for="acc in uniqueAccounts" :key="acc" :value="acc">{{ acc }}</option>
             </select>
           </div>
           <div>
-            <label class="block text-zinc-400 mb-1">새로운 계정 이름</label>
+            <label class="block text-zinc-400 mb-1">새로운 계정 이름 (이름 변경 시)</label>
             <input type="text" v-model="accountManager.newName" placeholder="예: Challenge #1" class="w-full p-2 rounded bg-zinc-100 dark:bg-[#1a1a1a] border border-zinc-300 dark:border-[#3a3a3a] text-zinc-800 dark:text-zinc-100 outline-none">
           </div>
         </div>
+        <div class="space-y-2 pt-2 border-t border-zinc-200 dark:border-darkBorder">
+          <button @click="executeAccountDelete" class="w-full py-2 text-xs bg-rose-600/20 hover:bg-rose-600 text-rose-500 hover:text-white font-bold rounded transition border border-rose-600/40">
+            🗑️ 선택한 계정 거래 기록 전체 제거
+          </button>
+        </div>
         <div class="flex justify-end gap-2 pt-2 border-t border-zinc-200 dark:border-darkBorder">
           <button @click="showAccountModal = false" class="px-3 py-1.5 text-xs text-zinc-400">취소</button>
-          <button @click="executeAccountRename" class="px-4 py-1.5 text-xs bg-accent hover:bg-accentHover text-zinc-950 font-bold rounded shadow-sm">일괄 변경</button>
+          <button @click="executeAccountRename" class="px-4 py-1.5 text-xs bg-accent hover:bg-accentHover text-zinc-950 font-bold rounded shadow-sm">이름 일괄 변경</button>
         </div>
       </div>
     </div>
@@ -746,8 +774,9 @@
 
           const timeframes = ['1M', '3M', '5M', '15M', '30M', '1H', '4H', '8H', '12H', '1D', '3D', '1W', '1M', '1Y'];
 
-          // 탑다운 분석 상태 데이터
-          const topDown = ref({
+          // 탑다운 분석 상태 데이터 (localStorage 연동)
+          const savedTopDown = localStorage.getItem('topDownAnalysis');
+          const topDown = ref(savedTopDown ? JSON.parse(savedTopDown) : {
             '1M': { opt1: '', opt2: '', opt3: '', opt4: '' },
             '1W': { opt1: '', opt2: '', opt3: '', opt4: '' },
             '1D': { opt1: '', opt2: '', opt3: '', opt4: '' },
@@ -755,10 +784,19 @@
             '1H': { opt1: '', opt2: '', opt3: '', opt4: '' }
           });
 
+          watch(topDown, (newVal) => {
+            localStorage.setItem('topDownAnalysis', JSON.stringify(newVal));
+          }, { deep: true });
+
+          const hasAnyTopDownSelected = computed(() => {
+            return Object.values(topDown.value).some(data => data.opt1 || data.opt2 || data.opt3 || data.opt4);
+          });
+
           const resetTopDown = () => {
             for (let tf in topDown.value) {
               topDown.value[tf] = { opt1: '', opt2: '', opt3: '', opt4: '' };
             }
+            localStorage.removeItem('topDownAnalysis');
           };
 
           const liveCheck = ref({
@@ -1020,6 +1058,27 @@
             }
           };
 
+          const executeAccountDelete = async () => {
+            const { target } = accountManager.value;
+            if (!target) {
+              alert('삭제할 계정을 선택해주세요.');
+              return;
+            }
+            if (confirm(`경고: "${target}" 계정에 속한 모든 매매 기록이 영구적으로 삭제됩니다. 계속하시겠습니까?`)) {
+              const targetTrades = trades.value.filter(t => (t.account_name || 'Challenge #1') === target);
+              for (const tr of targetTrades) {
+                await supabaseClient.from('trades').delete().eq('id', tr.id);
+              }
+              showAccountModal.value = false;
+              if (filters.value.account_name === target) filters.value.account_name = '';
+              if (selectedTrade.value && (selectedTrade.value.account_name || 'Challenge #1') === target) {
+                selectedTrade.value = null;
+              }
+              await fetchTrades();
+              alert(`"${target}" 계정의 모든 거래 기록이 제거되었습니다.`);
+            }
+          };
+
           const dailyPnlMap = computed(() => {
             const map = {};
             filteredTrades.value.forEach(t => map[t.trade_date] = (map[t.trade_date] || 0) + (Number(t.pnl) || 0));
@@ -1235,13 +1294,13 @@
           return {
             trades, filteredTrades, filters, stats, showModal, showAccountModal, accountManager, isEditing, form, uploading, isDragging, selectedTrade, activeImageIndex,
             selectedTradeImages, visibleDetailImages, modalImages, modalActiveIndex, getImages, getSmcData, formatRR,
-            calendarYear, calendarMonth, calendarDays, uniqueAccounts, openAccountManager, executeAccountRename, dailyPnlMap, prevMonth, nextMonth, selectDateFromCalendar, selectTrade, clearFilters,
+            calendarYear, calendarMonth, calendarDays, uniqueAccounts, openAccountManager, executeAccountRename, executeAccountDelete, dailyPnlMap, prevMonth, nextMonth, selectDateFromCalendar, selectTrade, clearFilters,
             openModal, closeModal, saveTrade, deleteTrade, handleFileUpload, handleDrop, handlePaste, removeFormImage,
             prevDetailImage, nextDetailImage, openImageModal, closeImageModal, prevModalImage, nextModalImage,
             handleTouchStart, handleDetailTouchEnd, handleModalTouchStart, handleModalTouchMove, handleModalTouchEnd,
             exportJSON, exportCSV, importJSON, theme, setTheme, timeframes,
             liveCheck, resetLiveChecker, applyToChecklistForm,
-            topDown, resetTopDown
+            topDown, resetTopDown, hasAnyTopDownSelected
           };
         }
       }).mount('#app');
