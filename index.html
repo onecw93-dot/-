@@ -44,7 +44,7 @@
   </style>
 </head>
 <body class="bg-zinc-100 dark:bg-darkBg text-zinc-800 dark:text-zinc-100 p-3 sm:p-6 md:p-8 min-h-screen transition-colors duration-200">
-  <div id="app" class="max-w-7xl mx-auto space-y-4 sm:space-y-5">
+  <div id="app" class="max-w-[1400px] mx-auto space-y-4 sm:space-y-5">
     
     <header class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 pb-3 border-b border-zinc-200 dark:border-darkBorder">
       <div>
@@ -76,11 +76,11 @@
       </div>
     </header>
 
-    <!-- 메인 영역: 통계 카드와 실전 체크리스트를 가운데 정렬 배치 -->
-    <div class="flex flex-col lg:flex-row justify-center items-start gap-4">
+    <!-- 메인 상단 영역: 3가지 컴포넌트를 가로로 나란히 배치 -->
+    <div class="flex flex-col xl:flex-row justify-center items-start gap-4">
       
-      <!-- 왼쪽 영역: 통계창 4개 (가로 폭 절반 축소) -->
-      <div class="w-full lg:w-[420px] space-y-3 sm:space-y-4">
+      <!-- 1. 왼쪽 영역: 통계창 4개 -->
+      <div class="w-full xl:w-[380px] space-y-3 sm:space-y-4">
         
         <!-- 1열: 총 손익 -->
         <div class="bg-white dark:bg-darkCard border border-zinc-200 dark:border-darkBorder p-3.5 sm:p-4 rounded-xl shadow-sm flex items-center justify-between">
@@ -130,8 +130,46 @@
 
       </div>
 
-      <!-- 오른쪽 영역: 실전 SMC / ICT 전략 체크리스트 (원래 크기 유지) -->
-      <div class="w-full lg:w-[420px] lg:sticky lg:top-4 space-y-3">
+      <!-- 2. 가운데 영역: 탑다운 분석 리스트 -->
+      <div class="w-full xl:w-[380px] xl:sticky xl:top-4 space-y-3">
+        <section class="bg-white dark:bg-darkCard border border-accent/40 p-3.5 sm:p-4 rounded-xl shadow-sm space-y-3">
+          <div class="flex justify-between items-center pb-2 border-b border-zinc-200 dark:border-darkBorder">
+            <div class="flex items-center gap-1.5">
+              <span class="text-xs font-bold text-accent tracking-wider">📊 TOP-DOWN ANALYSIS</span>
+            </div>
+            <button @click="resetTopDown" class="text-[10px] text-zinc-400 hover:text-zinc-200 underline">초기화</button>
+          </div>
+
+          <div class="space-y-2">
+            <div v-for="tf in ['1M', '1W', '1D', '4H', '1H']" :key="tf" class="p-2 bg-zinc-50 dark:bg-[#202020] rounded-lg border border-zinc-200 dark:border-darkBorder space-y-1.5">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-bold font-mono text-accent">{{ tf }}</span>
+              </div>
+              <div class="grid grid-cols-4 gap-1">
+                <select v-model="topDown[tf].opt1" class="p-1 text-[11px] rounded bg-white dark:bg-[#1a1a1a] border border-zinc-300 dark:border-[#3a3a3a] text-zinc-200 font-semibold outline-none">
+                  <option value="">선택</option>
+                  <option value="L">L</option><option value="S">S</option><option value="R">R</option>
+                </select>
+                <select v-model="topDown[tf].opt2" class="p-1 text-[11px] rounded bg-white dark:bg-[#1a1a1a] border border-zinc-300 dark:border-[#3a3a3a] text-zinc-200 font-semibold outline-none">
+                  <option value="">선택</option>
+                  <option value="IRL">IRL</option><option value="ERL">ERL</option><option value="PDH LG">PDH LG</option><option value="PDL LG">PDL LG</option><option value="ASIA H LG">ASIA H LG</option><option value="ASIA L LG">ASIA L LG</option><option value="LUNDUN H LG">LUNDUN H LG</option><option value="LUNDUN L LG">LUNDUN L LG</option>
+                </select>
+                <select v-model="topDown[tf].opt3" class="p-1 text-[11px] rounded bg-white dark:bg-[#1a1a1a] border border-zinc-300 dark:border-[#3a3a3a] text-zinc-200 font-semibold outline-none">
+                  <option value="">선택</option>
+                  <option value="OB">OB</option><option value="IMB">IMB</option><option value="BB">BB</option><option value="RB">RB</option>
+                </select>
+                <select v-model="topDown[tf].opt4" class="p-1 text-[11px] rounded bg-white dark:bg-[#1a1a1a] border border-zinc-300 dark:border-[#3a3a3a] text-zinc-200 font-semibold outline-none">
+                  <option value="">선택</option>
+                  <option value="P">P</option><option value="D">D</option><option value="0.5">0.5</option><option value="0.62">0.62</option><option value="0.705">0.705</option><option value="0.709">0.709</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <!-- 3. 오른쪽 영역: 실전 SMC / ICT 전략 체크리스트 -->
+      <div class="w-full xl:w-[380px] xl:sticky xl:top-4 space-y-3">
         <section class="bg-white dark:bg-darkCard border border-customOrange/40 p-3.5 sm:p-4 rounded-xl shadow-sm space-y-3">
           <div class="flex justify-between items-center pb-2 border-b border-zinc-200 dark:border-darkBorder">
             <div class="flex items-center gap-1.5">
@@ -145,7 +183,7 @@
               <label class="block text-[10px] font-bold text-zinc-500 dark:text-zinc-400">MS (Market Structure)</label>
               <div class="flex gap-1.5">
                 <select v-model="liveCheck.ms_tf" class="w-1/3 p-1 text-xs rounded bg-white dark:bg-[#1a1a1a] border border-zinc-300 dark:border-[#3a3a3a] text-customOrange font-semibold outline-none">
-                  <option value="">TF</option>
+                  <option value="">선택</option>
                   <option v-for="tf in timeframes" :key="tf" :value="tf">{{ tf }}</option>
                 </select>
                 <select v-model="liveCheck.ms_opt" class="w-2/3 p-1 text-xs rounded bg-white dark:bg-[#1a1a1a] border border-zinc-300 dark:border-[#3a3a3a] text-customOrange font-semibold outline-none">
@@ -159,11 +197,11 @@
               <label class="block text-[10px] font-bold text-zinc-500 dark:text-zinc-400">LQ (Liquidity)</label>
               <div class="flex gap-1.5">
                 <select v-model="liveCheck.lq_opt1" class="w-1/2 p-1 text-xs rounded bg-white dark:bg-[#1a1a1a] border border-zinc-300 dark:border-[#3a3a3a] text-customOrange font-semibold outline-none">
-                  <option value="">옵션1</option>
+                  <option value="">선택</option>
                   <option value="IRL">IRL</option><option value="ERL">ERL</option><option value="PDH LG">PDH LG</option><option value="PDL LG">PDL LG</option><option value="ASIA H LG">ASIA H LG</option><option value="ASIA L LG">ASIA L LG</option><option value="LUNDUN H LG">LUNDUN H LG</option><option value="LUNDUN L LG">LUNDUN L LG</option>
                 </select>
                 <select v-model="liveCheck.lq_opt2" class="w-1/2 p-1 text-xs rounded bg-white dark:bg-[#1a1a1a] border border-zinc-300 dark:border-[#3a3a3a] text-customOrange font-semibold outline-none">
-                  <option value="">옵션2</option>
+                  <option value="">선택</option>
                   <option value="IRL">IRL</option><option value="ERL">ERL</option><option value="PDH LG">PDH LG</option><option value="PDL LG">PDL LG</option><option value="ASIA H LG">ASIA H LG</option><option value="ASIA L LG">ASIA L LG</option><option value="LUNDUN H LG">LUNDUN H LG</option><option value="LUNDUN L LG">LUNDUN L LG</option>
                 </select>
               </div>
@@ -173,7 +211,7 @@
               <label class="block text-[10px] font-bold text-zinc-500 dark:text-zinc-400">POI (Point of Interest)</label>
               <div class="flex gap-1.5">
                 <select v-model="liveCheck.poi_tf" class="w-1/3 p-1 text-xs rounded bg-white dark:bg-[#1a1a1a] border border-zinc-300 dark:border-[#3a3a3a] text-customOrange font-semibold outline-none">
-                  <option value="">TF</option>
+                  <option value="">선택</option>
                   <option v-for="tf in timeframes" :key="tf" :value="tf">{{ tf }}</option>
                 </select>
                 <select v-model="liveCheck.poi_opt" class="w-2/3 p-1 text-xs rounded bg-white dark:bg-[#1a1a1a] border border-zinc-300 dark:border-[#3a3a3a] text-customOrange font-semibold outline-none">
@@ -187,11 +225,11 @@
               <label class="block text-[10px] font-bold text-zinc-500 dark:text-zinc-400">PD / OTE</label>
               <div class="flex gap-1.5">
                 <select v-model="liveCheck.pd_opt1" class="w-1/2 p-1 text-xs rounded bg-white dark:bg-[#1a1a1a] border border-zinc-300 dark:border-[#3a3a3a] text-customOrange font-semibold outline-none">
-                  <option value="">옵션1</option>
+                  <option value="">선택</option>
                   <option value="P">P</option><option value="D">D</option>
                 </select>
                 <select v-model="liveCheck.pd_opt2" class="w-1/2 p-1 text-xs rounded bg-white dark:bg-[#1a1a1a] border border-zinc-300 dark:border-[#3a3a3a] text-customOrange font-semibold outline-none">
-                  <option value="">옵션2</option>
+                  <option value="">선택</option>
                   <option value="0.5">0.5</option><option value="0.62">0.62</option><option value="0.705">0.705</option><option value="0.709">0.709</option>
                 </select>
               </div>
@@ -201,7 +239,7 @@
               <label class="block text-[10px] font-bold text-zinc-500 dark:text-zinc-400">LTF EM (Entry Model)</label>
               <div class="flex gap-1.5">
                 <select v-model="liveCheck.ltf_tf" class="w-1/3 p-1 text-xs rounded bg-white dark:bg-[#1a1a1a] border border-zinc-300 dark:border-[#3a3a3a] text-customOrange font-semibold outline-none">
-                  <option value="">TF</option>
+                  <option value="">선택</option>
                   <option v-for="tf in timeframes" :key="tf" :value="tf">{{ tf }}</option>
                 </select>
                 <select v-model="liveCheck.ltf_opt" class="w-2/3 p-1 text-xs rounded bg-white dark:bg-[#1a1a1a] border border-zinc-300 dark:border-[#3a3a3a] text-customOrange font-semibold outline-none">
@@ -540,7 +578,7 @@
                 <label class="block text-[9px] text-zinc-500 dark:text-zinc-400 mb-1">MS (Market Structure)</label>
                 <div class="flex gap-1">
                   <select v-model="form.smc_ms_tf" class="w-1/3 p-1.5 text-xs rounded bg-white dark:bg-[#1a1a1a] border border-zinc-300 dark:border-[#3a3a3a] focus:border-accent focus:ring-1 focus:ring-accent outline-none text-customOrange font-semibold transition">
-                    <option value="">TF</option>
+                    <option value="">선택</option>
                     <option v-for="tf in timeframes" :key="tf" :value="tf">{{ tf }}</option>
                   </select>
                   <select v-model="form.smc_ms_opt" class="w-2/3 p-1.5 text-xs rounded bg-white dark:bg-[#1a1a1a] border border-zinc-300 dark:border-[#3a3a3a] focus:border-accent focus:ring-1 focus:ring-accent outline-none text-customOrange font-semibold transition">
@@ -554,11 +592,11 @@
                 <label class="block text-[9px] text-zinc-500 dark:text-zinc-400 mb-1">LQ (Liquidity)</label>
                 <div class="flex gap-1">
                   <select v-model="form.smc_lq_opt1" class="w-1/2 p-1.5 text-xs rounded bg-white dark:bg-[#1a1a1a] border border-zinc-300 dark:border-[#3a3a3a] focus:border-accent focus:ring-1 focus:ring-accent outline-none text-customOrange font-semibold transition">
-                    <option value="">옵션1</option>
+                    <option value="">선택</option>
                     <option value="IRL">IRL</option><option value="ERL">ERL</option><option value="PDH LG">PDH LG</option><option value="PDL LG">PDL LG</option><option value="ASIA H LG">ASIA H LG</option><option value="ASIA L LG">ASIA L LG</option><option value="LUNDUN H LG">LUNDUN H LG</option><option value="LUNDUN L LG">LUNDUN L LG</option>
                   </select>
                   <select v-model="form.smc_lq_opt2" class="w-1/2 p-1.5 text-xs rounded bg-white dark:bg-[#1a1a1a] border border-zinc-300 dark:border-[#3a3a3a] focus:border-accent focus:ring-1 focus:ring-accent outline-none text-customOrange font-semibold transition">
-                    <option value="">옵션2</option>
+                    <option value="">선택</option>
                     <option value="IRL">IRL</option><option value="ERL">ERL</option><option value="PDH LG">PDH LG</option><option value="PDL LG">PDL LG</option><option value="ASIA H LG">ASIA H LG</option><option value="ASIA L LG">ASIA L LG</option><option value="LUNDUN H LG">LUNDUN H LG</option><option value="LUNDUN L LG">LUNDUN L LG</option>
                   </select>
                 </div>
@@ -568,7 +606,7 @@
                 <label class="block text-[9px] text-zinc-500 dark:text-zinc-400 mb-1">POI (Point of Interest)</label>
                 <div class="flex gap-1">
                   <select v-model="form.smc_poi_tf" class="w-1/3 p-1.5 text-xs rounded bg-white dark:bg-[#1a1a1a] border border-zinc-300 dark:border-[#3a3a3a] focus:border-accent focus:ring-1 focus:ring-accent outline-none text-customOrange font-semibold transition">
-                    <option value="">TF</option>
+                    <option value="">선택</option>
                     <option v-for="tf in timeframes" :key="tf" :value="tf">{{ tf }}</option>
                   </select>
                   <select v-model="form.smc_poi_opt" class="w-2/3 p-1.5 text-xs rounded bg-white dark:bg-[#1a1a1a] border border-zinc-300 dark:border-[#3a3a3a] focus:border-accent focus:ring-1 focus:ring-accent outline-none text-customOrange font-semibold transition">
@@ -582,11 +620,11 @@
                 <label class="block text-[9px] text-zinc-500 dark:text-zinc-400 mb-1">PD / OTE</label>
                 <div class="flex gap-1">
                   <select v-model="form.smc_pd_opt1" class="w-1/2 p-1.5 text-xs rounded bg-white dark:bg-[#1a1a1a] border border-zinc-300 dark:border-[#3a3a3a] focus:border-accent focus:ring-1 focus:ring-accent outline-none text-customOrange font-semibold transition">
-                    <option value="">옵션1</option>
+                    <option value="">선택</option>
                     <option value="P">P</option><option value="D">D</option>
                   </select>
                   <select v-model="form.smc_pd_opt2" class="w-1/2 p-1.5 text-xs rounded bg-white dark:bg-[#1a1a1a] border border-zinc-300 dark:border-[#3a3a3a] focus:border-accent focus:ring-1 focus:ring-accent outline-none text-customOrange font-semibold transition">
-                    <option value="">옵션2</option>
+                    <option value="">선택</option>
                     <option value="0.5">0.5</option><option value="0.62">0.62</option><option value="0.705">0.705</option><option value="0.709">0.709</option>
                   </select>
                 </div>
@@ -596,7 +634,7 @@
                 <label class="block text-[9px] text-zinc-500 dark:text-zinc-400 mb-1">LTF EM (Entry Model)</label>
                 <div class="flex gap-1">
                   <select v-model="form.smc_ltf_tf" class="w-1/3 p-1.5 text-xs rounded bg-white dark:bg-[#1a1a1a] border border-zinc-300 dark:border-[#3a3a3a] focus:border-accent focus:ring-1 focus:ring-accent outline-none text-customOrange font-semibold transition">
-                    <option value="">TF</option>
+                    <option value="">선택</option>
                     <option v-for="tf in timeframes" :key="tf" :value="tf">{{ tf }}</option>
                   </select>
                   <select v-model="form.smc_ltf_opt" class="w-2/3 p-1.5 text-xs rounded bg-white dark:bg-[#1a1a1a] border border-zinc-300 dark:border-[#3a3a3a] focus:border-accent focus:ring-1 focus:ring-accent outline-none text-customOrange font-semibold transition">
@@ -707,6 +745,21 @@
           const filters = ref({ account_name: '', symbol: '', direction: '', result: '', date: '' });
 
           const timeframes = ['1M', '3M', '5M', '15M', '30M', '1H', '4H', '8H', '12H', '1D', '3D', '1W', '1M', '1Y'];
+
+          // 탑다운 분석 상태 데이터
+          const topDown = ref({
+            '1M': { opt1: '', opt2: '', opt3: '', opt4: '' },
+            '1W': { opt1: '', opt2: '', opt3: '', opt4: '' },
+            '1D': { opt1: '', opt2: '', opt3: '', opt4: '' },
+            '4H': { opt1: '', opt2: '', opt3: '', opt4: '' },
+            '1H': { opt1: '', opt2: '', opt3: '', opt4: '' }
+          });
+
+          const resetTopDown = () => {
+            for (let tf in topDown.value) {
+              topDown.value[tf] = { opt1: '', opt2: '', opt3: '', opt4: '' };
+            }
+          };
 
           const liveCheck = ref({
             ms_tf: '', ms_opt: '',
@@ -1187,7 +1240,8 @@
             prevDetailImage, nextDetailImage, openImageModal, closeImageModal, prevModalImage, nextModalImage,
             handleTouchStart, handleDetailTouchEnd, handleModalTouchStart, handleModalTouchMove, handleModalTouchEnd,
             exportJSON, exportCSV, importJSON, theme, setTheme, timeframes,
-            liveCheck, resetLiveChecker, applyToChecklistForm
+            liveCheck, resetLiveChecker, applyToChecklistForm,
+            topDown, resetTopDown
           };
         }
       }).mount('#app');
