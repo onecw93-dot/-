@@ -130,7 +130,7 @@
 
       </div>
 
-      <!-- 2. 가운데 영역: 탑다운 분석 리스트 및 선택 결과 출력 상자 -->
+      <!-- 2. 가운데 영역: 탑다운 분석 리스트 및 선택 결과 출력 상자 (L/S/R 선택지 1개 추가 반영) -->
       <div class="w-full xl:w-[380px] xl:sticky xl:top-4 space-y-3">
         <section class="bg-white dark:bg-darkCard border border-accent/40 p-3.5 sm:p-4 rounded-xl shadow-sm space-y-3">
           <div class="flex justify-between items-center pb-2 border-b border-zinc-200 dark:border-darkBorder">
@@ -143,7 +143,12 @@
           <div class="space-y-2">
             <div v-for="tf in ['1M', '1W', '1D', '4H', '1H']" :key="tf" class="flex items-center gap-2 p-2 bg-zinc-50 dark:bg-[#202020] rounded-lg border border-zinc-200 dark:border-darkBorder">
               <div class="bg-[#1a1a1a] text-white font-bold px-2 py-1 rounded text-xs border border-[#333] min-w-[36px] text-center font-mono">{{ tf }}</div>
-              <div class="grid grid-cols-4 gap-1 flex-1">
+              <!-- 5개의 선택 박스로 확장 -->
+              <div class="grid grid-cols-5 gap-1 flex-1">
+                <select v-model="topDown[tf].opt0" class="p-1 text-[11px] rounded bg-white dark:bg-[#1a1a1a] border border-zinc-300 dark:border-[#3a3a3a] text-customOrange font-semibold outline-none">
+                  <option value="">선택</option>
+                  <option value="L">L</option><option value="S">S</option><option value="R">R</option>
+                </select>
                 <select v-model="topDown[tf].opt1" class="p-1 text-[11px] rounded bg-white dark:bg-[#1a1a1a] border border-zinc-300 dark:border-[#3a3a3a] text-customOrange font-semibold outline-none">
                   <option value="">선택</option>
                   <option value="L">L</option><option value="S">S</option><option value="R">R</option>
@@ -173,9 +178,10 @@
           <div class="space-y-2.5 min-h-[110px] text-xs font-mono">
             <template v-if="hasAnyTopDownSelected">
               <template v-for="(data, tf) in topDown" :key="tf">
-                <div v-if="data.opt1 || data.opt2 || data.opt3 || data.opt4" class="flex items-center gap-2 p-2 bg-zinc-50 dark:bg-[#202020] rounded-lg border border-zinc-200 dark:border-darkBorder">
+                <div v-if="data.opt0 || data.opt1 || data.opt2 || data.opt3 || data.opt4" class="flex items-center gap-2 p-2 bg-zinc-50 dark:bg-[#202020] rounded-lg border border-zinc-200 dark:border-darkBorder">
                   <div class="bg-[#1a1a1a] text-white font-bold px-2 py-1 rounded text-xs border border-[#333] min-w-[36px] text-center font-mono">{{ tf }}</div>
                   <div class="flex items-center gap-1.5 text-customOrange font-semibold flex-wrap justify-start flex-1">
+                    <span v-if="data.opt0" class="p-1 text-xs rounded bg-white dark:bg-[#1a1a1a] border border-zinc-300 dark:border-[#3a3a3a] px-2">{{ data.opt0 }}</span>
                     <span v-if="data.opt1" class="p-1 text-xs rounded bg-white dark:bg-[#1a1a1a] border border-zinc-300 dark:border-[#3a3a3a] px-2">{{ data.opt1 }}</span>
                     <span v-if="data.opt2" class="p-1 text-xs rounded bg-white dark:bg-[#1a1a1a] border border-zinc-300 dark:border-[#3a3a3a] px-2">{{ data.opt2 }}</span>
                     <span v-if="data.opt3" class="p-1 text-xs rounded bg-white dark:bg-[#1a1a1a] border border-zinc-300 dark:border-[#3a3a3a] px-2">{{ data.opt3 }}</span>
@@ -204,12 +210,16 @@
           <div class="space-y-2.5">
             <div class="p-2 bg-zinc-50 dark:bg-[#202020] rounded-lg border border-zinc-200 dark:border-darkBorder space-y-1">
               <label class="block text-[10px] font-bold text-zinc-500 dark:text-zinc-400">MS (Market Structure)</label>
-              <div class="flex gap-1.5">
-                <select v-model="liveCheck.ms_tf" class="w-1/3 p-1 text-xs rounded bg-white dark:bg-[#1a1a1a] border border-zinc-300 dark:border-[#3a3a3a] text-customOrange font-semibold outline-none">
+              <div class="grid grid-cols-3 gap-1.5">
+                <select v-model="liveCheck.ms_tf" class="p-1 text-xs rounded bg-white dark:bg-[#1a1a1a] border border-zinc-300 dark:border-[#3a3a3a] text-customOrange font-semibold outline-none">
                   <option value="">선택</option>
                   <option v-for="tf in timeframes" :key="tf" :value="tf">{{ tf }}</option>
                 </select>
-                <select v-model="liveCheck.ms_opt" class="w-2/3 p-1 text-xs rounded bg-white dark:bg-[#1a1a1a] border border-zinc-300 dark:border-[#3a3a3a] text-customOrange font-semibold outline-none">
+                <select v-model="liveCheck.ms_opt1" class="p-1 text-xs rounded bg-white dark:bg-[#1a1a1a] border border-zinc-300 dark:border-[#3a3a3a] text-customOrange font-semibold outline-none">
+                  <option value="">선택</option>
+                  <option value="L">L</option><option value="S">S</option><option value="R">R</option>
+                </select>
+                <select v-model="liveCheck.ms_opt2" class="p-1 text-xs rounded bg-white dark:bg-[#1a1a1a] border border-zinc-300 dark:border-[#3a3a3a] text-customOrange font-semibold outline-none">
                   <option value="">선택</option>
                   <option value="L">L</option><option value="S">S</option><option value="R">R</option>
                 </select>
@@ -604,12 +614,16 @@
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
               <div>
                 <label class="block text-[9px] text-zinc-500 dark:text-zinc-400 mb-1">MS (Market Structure)</label>
-                <div class="flex gap-1">
-                  <select v-model="form.smc_ms_tf" class="w-1/3 p-1.5 text-xs rounded bg-white dark:bg-[#1a1a1a] border border-zinc-300 dark:border-[#3a3a3a] focus:border-accent focus:ring-1 focus:ring-accent outline-none text-customOrange font-semibold transition">
+                <div class="grid grid-cols-3 gap-1">
+                  <select v-model="form.smc_ms_tf" class="p-1.5 text-xs rounded bg-white dark:bg-[#1a1a1a] border border-zinc-300 dark:border-[#3a3a3a] focus:border-accent focus:ring-1 focus:ring-accent outline-none text-customOrange font-semibold transition">
                     <option value="">선택</option>
                     <option v-for="tf in timeframes" :key="tf" :value="tf">{{ tf }}</option>
                   </select>
-                  <select v-model="form.smc_ms_opt" class="w-2/3 p-1.5 text-xs rounded bg-white dark:bg-[#1a1a1a] border border-zinc-300 dark:border-[#3a3a3a] focus:border-accent focus:ring-1 focus:ring-accent outline-none text-customOrange font-semibold transition">
+                  <select v-model="form.smc_ms_opt1" class="p-1.5 text-xs rounded bg-white dark:bg-[#1a1a1a] border border-zinc-300 dark:border-[#3a3a3a] focus:border-accent focus:ring-1 focus:ring-accent outline-none text-customOrange font-semibold transition">
+                    <option value="">선택</option>
+                    <option value="L">L</option><option value="S">S</option><option value="R">R</option>
+                  </select>
+                  <select v-model="form.smc_ms_opt2" class="p-1.5 text-xs rounded bg-white dark:bg-[#1a1a1a] border border-zinc-300 dark:border-[#3a3a3a] focus:border-accent focus:ring-1 focus:ring-accent outline-none text-customOrange font-semibold transition">
                     <option value="">선택</option>
                     <option value="L">L</option><option value="S">S</option><option value="R">R</option>
                   </select>
@@ -774,14 +788,14 @@
 
           const timeframes = ['1M', '3M', '5M', '15M', '30M', '1H', '4H', '8H', '12H', '1D', '3D', '1W', '1M', '1Y'];
 
-          // 탑다운 분석 상태 데이터 (localStorage 연동)
+          // 탑다운 분석 상태 데이터 (opt0 추가로 5개 필드 관리)
           const savedTopDown = localStorage.getItem('topDownAnalysis');
           const topDown = ref(savedTopDown ? JSON.parse(savedTopDown) : {
-            '1M': { opt1: '', opt2: '', opt3: '', opt4: '' },
-            '1W': { opt1: '', opt2: '', opt3: '', opt4: '' },
-            '1D': { opt1: '', opt2: '', opt3: '', opt4: '' },
-            '4H': { opt1: '', opt2: '', opt3: '', opt4: '' },
-            '1H': { opt1: '', opt2: '', opt3: '', opt4: '' }
+            '1M': { opt0: '', opt1: '', opt2: '', opt3: '', opt4: '' },
+            '1W': { opt0: '', opt1: '', opt2: '', opt3: '', opt4: '' },
+            '1D': { opt0: '', opt1: '', opt2: '', opt3: '', opt4: '' },
+            '4H': { opt0: '', opt1: '', opt2: '', opt3: '', opt4: '' },
+            '1H': { opt0: '', opt1: '', opt2: '', opt3: '', opt4: '' }
           });
 
           watch(topDown, (newVal) => {
@@ -789,18 +803,18 @@
           }, { deep: true });
 
           const hasAnyTopDownSelected = computed(() => {
-            return Object.values(topDown.value).some(data => data.opt1 || data.opt2 || data.opt3 || data.opt4);
+            return Object.values(topDown.value).some(data => data.opt0 || data.opt1 || data.opt2 || data.opt3 || data.opt4);
           });
 
           const resetTopDown = () => {
             for (let tf in topDown.value) {
-              topDown.value[tf] = { opt1: '', opt2: '', opt3: '', opt4: '' };
+              topDown.value[tf] = { opt0: '', opt1: '', opt2: '', opt3: '', opt4: '' };
             }
             localStorage.removeItem('topDownAnalysis');
           };
 
           const liveCheck = ref({
-            ms_tf: '', ms_opt: '',
+            ms_tf: '', ms_opt1: '', ms_opt2: '',
             lq_opt1: '', lq_opt2: '',
             poi_tf: '', poi_opt: '',
             pd_opt1: '', pd_opt2: '',
@@ -809,13 +823,14 @@
           });
 
           const resetLiveChecker = () => {
-            liveCheck.value = { ms_tf: '', ms_opt: '', lq_opt1: '', lq_opt2: '', poi_tf: '', poi_opt: '', pd_opt1: '', pd_opt2: '', ltf_tf: '', ltf_opt: '', fibo_opt: '' };
+            liveCheck.value = { ms_tf: '', ms_opt1: '', ms_opt2: '', lq_opt1: '', lq_opt2: '', poi_tf: '', poi_opt: '', pd_opt1: '', pd_opt2: '', ltf_tf: '', ltf_opt: '', fibo_opt: '' };
           };
 
           const applyToChecklistForm = () => {
             openModal();
             form.value.smc_ms_tf = liveCheck.value.ms_tf;
-            form.value.smc_ms_opt = liveCheck.value.ms_opt;
+            form.value.smc_ms_opt1 = liveCheck.value.ms_opt1;
+            form.value.smc_ms_opt2 = liveCheck.value.ms_opt2;
             form.value.smc_lq_opt1 = liveCheck.value.lq_opt1;
             form.value.smc_lq_opt2 = liveCheck.value.lq_opt2;
             form.value.smc_poi_tf = liveCheck.value.poi_tf;
@@ -852,7 +867,7 @@
             account_name: 'Challenge #1',
             symbol: 'MNQ', direction: 'Long', pnl: 0, rr: 2, result: 'Win', 
             notes: '', images: [],
-            smc_ms_tf: '', smc_ms_opt: '',
+            smc_ms_tf: '', smc_ms_opt1: '', smc_ms_opt2: '',
             smc_lq_opt1: '', smc_lq_opt2: '',
             smc_poi_tf: '', smc_poi_opt: '',
             smc_pd_opt1: '', smc_pd_opt2: '',
@@ -884,12 +899,16 @@
               if (trade.reason.trim().startsWith('{')) {
                 const parsed = JSON.parse(trade.reason);
                 if (typeof parsed === 'object' && parsed !== null) {
+                  const formatMs = (tf, o1, o2) => {
+                    const opts = [o1, o2].filter(Boolean).join(' ');
+                    return (tf && opts) ? `${tf} ${opts}` : (tf || opts || '');
+                  };
                   const formatPair = (tf, opt) => (tf && opt) ? `${tf} ${opt}` : (tf || opt || '');
                   const formatLq = (o1, o2) => (o1 && o2) ? `${o1}, ${o2}` : (o1 || o2 || '');
                   const formatPd = (o1, o2) => (o1 && o2) ? `${o1} ${o2}` : (o1 || o2 || '');
 
                   return {
-                    ms: formatPair(parsed.ms_tf, parsed.ms_opt),
+                    ms: formatMs(parsed.ms_tf, parsed.ms_opt1, parsed.ms_opt2 || parsed.ms_opt),
                     lq: formatLq(parsed.lq_opt1, parsed.lq_opt2),
                     poi: formatPair(parsed.poi_tf, parsed.poi_opt),
                     pd: formatPd(parsed.pd_opt1, parsed.pd_opt2),
@@ -1192,7 +1211,8 @@
                 notes: trade.notes || '',
                 images: getImages(trade),
                 smc_ms_tf: rawSmc.ms_tf || '',
-                smc_ms_opt: rawSmc.ms_opt || '',
+                smc_ms_opt1: rawSmc.ms_opt1 || rawSmc.ms_opt || '',
+                smc_ms_opt2: rawSmc.ms_opt2 || '',
                 smc_lq_opt1: rawSmc.lq_opt1 || '',
                 smc_lq_opt2: rawSmc.lq_opt2 || '',
                 smc_poi_tf: rawSmc.poi_tf || '',
@@ -1215,7 +1235,8 @@
           const saveTrade = async () => {
             const smcObj = {
               ms_tf: form.value.smc_ms_tf,
-              ms_opt: form.value.smc_ms_opt,
+              ms_opt1: form.value.smc_ms_opt1,
+              ms_opt2: form.value.smc_ms_opt2,
               lq_opt1: form.value.smc_lq_opt1,
               lq_opt2: form.value.smc_lq_opt2,
               poi_tf: form.value.smc_poi_tf,
