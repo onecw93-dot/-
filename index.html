@@ -130,7 +130,7 @@
 
       </div>
 
-      <!-- 2. 가운데 영역: 탑다운 분석 리스트 및 선택 결과 출력 상자 (L/S/R 선택지 1개 추가 반영) -->
+      <!-- 2. 가운데 영역: 탑다운 분석 리스트 및 선택 결과 출력 상자 -->
       <div class="w-full xl:w-[380px] xl:sticky xl:top-4 space-y-3">
         <section class="bg-white dark:bg-darkCard border border-accent/40 p-3.5 sm:p-4 rounded-xl shadow-sm space-y-3">
           <div class="flex justify-between items-center pb-2 border-b border-zinc-200 dark:border-darkBorder">
@@ -143,7 +143,6 @@
           <div class="space-y-2">
             <div v-for="tf in ['1M', '1W', '1D', '4H', '1H']" :key="tf" class="flex items-center gap-2 p-2 bg-zinc-50 dark:bg-[#202020] rounded-lg border border-zinc-200 dark:border-darkBorder">
               <div class="bg-[#1a1a1a] text-white font-bold px-2 py-1 rounded text-xs border border-[#333] min-w-[36px] text-center font-mono">{{ tf }}</div>
-              <!-- 5개의 선택 박스로 확장 -->
               <div class="grid grid-cols-5 gap-1 flex-1">
                 <select v-model="topDown[tf].opt0" class="p-1 text-[11px] rounded bg-white dark:bg-[#1a1a1a] border border-zinc-300 dark:border-[#3a3a3a] text-customOrange font-semibold outline-none">
                   <option value="">선택</option>
@@ -365,6 +364,10 @@
           <span v-if="selectedTrade.rr" class="text-xs font-mono text-accent bg-accent/10 px-1.5 py-0.5 rounded">
             RR {{ formatRR(selectedTrade.rr) }}
           </span>
+          <!-- 거래 품질 표시 뱃지 -->
+          <span v-if="selectedTrade.trade_quality" class="text-xs font-bold px-2 py-0.5 rounded" :class="selectedTrade.trade_quality === '좋은 거래' ? 'bg-accent/20 text-accent' : 'bg-rose-500/20 text-rose-400'">
+            {{ selectedTrade.trade_quality }}
+          </span>
         </div>
         <div class="flex items-center gap-1 sm:gap-2">
           <button @click="openModal(selectedTrade)" class="text-xs text-zinc-400 hover:text-zinc-900 dark:hover:text-white p-1">수정</button>
@@ -447,9 +450,13 @@
       <div class="p-3 bg-zinc-50 dark:bg-[#202020] border-b border-zinc-200 dark:border-darkBorder flex flex-wrap gap-2 items-center justify-between">
         <div class="flex items-center gap-2">
           <span class="text-xs font-bold text-zinc-600 dark:text-zinc-300">SEARCH & FILTER</span>
-          <button v-if="filters.account_name || filters.symbol || filters.direction || filters.result || filters.date" @click="clearFilters" class="text-[10px] text-accent">초기화</button>
+          <button v-if="filters.account_name || filters.symbol || filters.direction || filters.result || filters.trade_quality || filters.date" @click="clearFilters" class="text-[10px] text-accent">초기화</button>
         </div>
         <div class="flex flex-wrap gap-1.5 sm:gap-2">
+          <select v-model="filters.account_name" class="p-1.5 text-xs rounded bg-white dark:bg-[#1f1f1f] border border-zinc-300 dark:border-darkBorder text-zinc-800 dark:text-zinc-200 focus:border-accent outline-none">
+            <option value="">계정 전체</option>
+            <option v-for="acc in uniqueAccounts" :key="acc" :value="acc">{{ acc }}</option>
+          </select>
           <select v-model="filters.symbol" class="p-1.5 text-xs rounded bg-white dark:bg-[#1f1f1f] border border-zinc-300 dark:border-darkBorder text-zinc-800 dark:text-zinc-200 focus:border-accent outline-none">
             <option value="">종목 전체</option><option value="MNQ">MNQ</option><option value="MGC">MGC</option>
           </select>
@@ -458,6 +465,10 @@
           </select>
           <select v-model="filters.result" class="p-1.5 text-xs rounded bg-white dark:bg-[#1f1f1f] border border-zinc-300 dark:border-darkBorder text-zinc-800 dark:text-zinc-200 focus:border-accent outline-none">
             <option value="">결과 전체</option><option value="Win">Win</option><option value="Loss">Loss</option>
+          </select>
+          <!-- 거래 품질 필터 -->
+          <select v-model="filters.trade_quality" class="p-1.5 text-xs rounded bg-white dark:bg-[#1f1f1f] border border-zinc-300 dark:border-darkBorder text-zinc-800 dark:text-zinc-200 focus:border-accent outline-none">
+            <option value="">거래평가 전체</option><option value="좋은 거래">좋은 거래</option><option value="나쁜 거래">나쁜 거래</option>
           </select>
           <input type="date" v-model="filters.date" @click="$event.target.showPicker?.()" class="p-1.5 text-xs rounded bg-white dark:bg-[#1f1f1f] border border-zinc-300 dark:border-darkBorder text-zinc-800 dark:text-zinc-200 focus:border-accent outline-none relative">
         </div>
@@ -475,13 +486,14 @@
               <th class="p-3">손익비</th>
               <th class="p-3">손익 ($)</th>
               <th class="p-3">결과</th>
+              <th class="p-3">거래평가</th>
               <th class="p-3">차트</th>
               <th class="p-3 text-right">관리</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-zinc-200 dark:divide-darkBorder">
             <tr v-if="filteredTrades.length === 0">
-              <td colspan="10" class="p-6 text-center text-zinc-400">기록이 없습니다.</td>
+              <td colspan="11" class="p-6 text-center text-zinc-400">기록이 없습니다.</td>
             </tr>
             <tr v-for="trade in filteredTrades" :key="trade.id" @click="selectTrade(trade)"
                 :class="selectedTrade && selectedTrade.id === trade.id ? 'bg-accent/10 border-l-2 border-accent' : 'hover:bg-zinc-50 dark:hover:bg-[#2c2c2c]'"
@@ -507,6 +519,12 @@
                 {{ trade.pnl > 0 ? '+' : '' }}{{ trade.pnl }}
               </td>
               <td class="p-3 font-semibold text-zinc-700 dark:text-zinc-200">{{ trade.result }}</td>
+              <td class="p-3">
+                <span v-if="trade.trade_quality" class="font-semibold px-2 py-0.5 rounded text-[11px]" :class="trade.trade_quality === '좋은 거래' ? 'bg-accent/20 text-accent' : 'bg-rose-500/20 text-rose-400'">
+                  {{ trade.trade_quality }}
+                </span>
+                <span v-else class="text-zinc-400">-</span>
+              </td>
               <td class="p-3">
                 <span v-if="getImages(trade).length > 0" class="text-accent">🖼️ {{ getImages(trade).length }}</span>
                 <span v-else class="text-zinc-400">-</span>
@@ -596,6 +614,15 @@
               <label class="block text-[10px] text-zinc-500 dark:text-zinc-400 mb-1">결과</label>
               <select v-model="form.result" required class="w-full p-2 text-xs rounded bg-white dark:bg-[#1a1a1a] border border-zinc-300 dark:border-[#3a3a3a] focus:border-accent focus:ring-1 focus:ring-accent outline-none text-zinc-800 dark:text-zinc-100 transition">
                 <option value="Win">Win</option><option value="Loss">Loss</option>
+              </select>
+            </div>
+            <!-- 거래 평가 선택 필드 -->
+            <div>
+              <label class="block text-[10px] text-zinc-500 dark:text-zinc-400 mb-1">거래 평가 (선택)</label>
+              <select v-model="form.trade_quality" class="w-full p-2 text-xs rounded bg-white dark:bg-[#1a1a1a] border border-zinc-300 dark:border-[#3a3a3a] focus:border-accent focus:ring-1 focus:ring-accent outline-none text-zinc-800 dark:text-zinc-100 transition">
+                <option value="">선택 안 함</option>
+                <option value="좋은 거래">좋은 거래</option>
+                <option value="나쁜 거래">나쁜 거래</option>
               </select>
             </div>
             <div>
@@ -784,11 +811,11 @@
           const isDragging = ref(false);
           const modalImages = ref([]);
           const modalActiveIndex = ref(0);
-          const filters = ref({ account_name: '', symbol: '', direction: '', result: '', date: '' });
+          const filters = ref({ account_name: '', symbol: '', direction: '', result: '', trade_quality: '', date: '' });
 
           const timeframes = ['1M', '3M', '5M', '15M', '30M', '1H', '4H', '8H', '12H', '1D', '3D', '1W', '1M', '1Y'];
 
-          // 탑다운 분석 상태 데이터 (opt0 추가로 5개 필드 관리)
+          // 탑다운 분석 상태 데이터
           const savedTopDown = localStorage.getItem('topDownAnalysis');
           const topDown = ref(savedTopDown ? JSON.parse(savedTopDown) : {
             '1M': { opt0: '', opt1: '', opt2: '', opt3: '', opt4: '' },
@@ -866,6 +893,7 @@
             trade_date: initialDate || new Date().toISOString().substring(0, 10),
             account_name: 'Challenge #1',
             symbol: 'MNQ', direction: 'Long', pnl: 0, rr: 2, result: 'Win', 
+            trade_quality: '', 
             notes: '', images: [],
             smc_ms_tf: '', smc_ms_opt1: '', smc_ms_opt2: '',
             smc_lq_opt1: '', smc_lq_opt2: '',
@@ -1123,7 +1151,7 @@
 
           const prevMonth = () => calendarMonth.value === 0 ? (calendarMonth.value = 11, calendarYear.value--) : calendarMonth.value--;
           const nextMonth = () => calendarMonth.value === 11 ? (calendarMonth.value = 0, calendarYear.value++) : calendarMonth.value++;
-          const clearFilters = () => filters.value = { account_name: '', symbol: '', direction: '', result: '', date: '' };
+          const clearFilters = () => filters.value = { account_name: '', symbol: '', direction: '', result: '', trade_quality: '', date: '' };
 
           const filteredTrades = computed(() => {
             return trades.value.filter(t => {
@@ -1132,6 +1160,7 @@
                      (!filters.value.symbol || t.symbol === filters.value.symbol) &&
                      (!filters.value.direction || t.direction === filters.value.direction) &&
                      (!filters.value.result || t.result === filters.value.result) &&
+                     (!filters.value.trade_quality || t.trade_quality === filters.value.trade_quality) &&
                      (!filters.value.date || t.trade_date === filters.value.date);
             });
           });
@@ -1207,6 +1236,7 @@
               form.value = { 
                 ...trade, 
                 account_name: trade.account_name || 'Challenge #1',
+                trade_quality: trade.trade_quality || '',
                 rr: rawRR !== undefined && rawRR !== null ? Number(rawRR) : 2,
                 notes: trade.notes || '',
                 images: getImages(trade),
@@ -1256,6 +1286,7 @@
               pnl: Number(form.value.pnl) || 0, 
               rr: Number(form.value.rr) || 0, 
               result: form.value.result, 
+              trade_quality: form.value.trade_quality ? form.value.trade_quality : null,
               reason: JSON.stringify(smcObj),
               notes: form.value.notes || '', 
               image_url: JSON.stringify(form.value.images)
@@ -1263,10 +1294,18 @@
 
             let res = null;
             if (isEditing.value) {
-              const { data } = await supabaseClient.from('trades').update(payload).eq('id', editingId.value).select();
+              const { data, error } = await supabaseClient.from('trades').update(payload).eq('id', editingId.value).select();
+              if (error) {
+                alert('저장 실패: ' + error.message);
+                return;
+              }
               if (data) res = data[0];
             } else {
-              const { data } = await supabaseClient.from('trades').insert([payload]).select();
+              const { data, error } = await supabaseClient.from('trades').insert([payload]).select();
+              if (error) {
+                alert('저장 실패: ' + error.message);
+                return;
+              }
               if (data) res = data[0];
             }
             closeModal();
@@ -1289,7 +1328,7 @@
 
           const exportCSV = () => {
             if (!trades.value.length) return;
-            const headers = ['id', 'account_name', 'trade_date', 'symbol', 'direction', 'pnl', 'rr', 'result', 'reason', 'notes'];
+            const headers = ['id', 'account_name', 'trade_date', 'symbol', 'direction', 'pnl', 'rr', 'result', 'trade_quality', 'reason', 'notes'];
             const rows = trades.value.map(t => headers.map(h => `"${t[h] || ''}"`).join(','));
             const blob = new Blob(['\uFEFF' + [headers.join(','), ...rows].join('\n')], { type: 'text/csv;' });
             const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `journal_${new Date().toISOString().substring(0,10)}.json`.replace('.json', '.csv'); a.click();
