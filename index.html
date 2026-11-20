@@ -50,15 +50,15 @@
 <body class="bg-zinc-100 dark:bg-darkBg text-zinc-800 dark:text-zinc-100 p-3 sm:p-6 md:p-8 min-h-screen transition-colors duration-200">
   <div id="app" class="max-w-[1400px] mx-auto space-y-4 sm:space-y-5">
     
-    <!-- 로그인 화면 오버레이 -->
-    <div v-if="!isLoggedIn" class="fixed inset-0 bg-zinc-950/90 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <!-- 로그인 / 보기 선택 화면 오버레이 -->
+    <div v-if="!hasAccess" class="fixed inset-0 bg-zinc-950/90 backdrop-blur-sm z-50 flex items-center justify-center p-4">
       <div class="bg-white dark:bg-darkCard border border-accent/40 rounded-2xl p-6 sm:p-8 max-w-sm w-full space-y-5 shadow-2xl">
         <div class="text-center space-y-2">
           <div class="inline-flex p-3 bg-accent/10 rounded-full text-accent mb-1">
             ⚡
           </div>
           <h2 class="text-xl font-bold tracking-wide">TRADING JOURNAL</h2>
-          <p class="text-xs text-zinc-500 dark:text-zinc-400">매매일지 접근을 위해 로그인해주세요.</p>
+          <p class="text-xs text-zinc-500 dark:text-zinc-400">매매일지 접근을 위해 로그인하거나 보기 모드를 선택하세요.</p>
         </div>
 
         <form @submit.prevent="handleLogin" class="space-y-4">
@@ -87,23 +87,35 @@
             로그인
           </button>
         </form>
+
+        <div class="pt-3 border-t border-zinc-200 dark:border-darkBorder">
+          <button type="button" @click="enterViewOnlyMode"
+                  class="w-full py-2.5 bg-zinc-100 dark:bg-[#1a1a1a] hover:bg-zinc-200 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-200 font-semibold rounded-xl border border-zinc-300 dark:border-darkBorder transition text-xs">
+            👀 로그인 없이 보기 (읽기 전용)
+          </button>
+        </div>
       </div>
     </div>
 
-    <!-- 메인 대시보드 콘텐츠 (로그인 후에만 표시) -->
-    <div v-if="isLoggedIn" class="space-y-4 sm:space-y-5">
+    <!-- 메인 대시보드 콘텐츠 (로그인 또는 보기 전용 모드 진입 시 표시) -->
+    <div v-if="hasAccess" class="space-y-4 sm:space-y-5">
       <header class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 pb-3 border-b border-zinc-200 dark:border-darkBorder">
-        <div class="flex items-center gap-3">
+        <div class="flex flex-wrap items-center gap-2.5">
           <h1 class="text-lg sm:text-xl font-bold tracking-wide">매매일지</h1>
-          <button @click="handleLogout" class="text-[11px] text-zinc-400 hover:text-rose-500 transition underline">로그아웃</button>
+          <span v-if="isViewOnly" class="text-[11px] font-bold px-2 py-0.5 rounded bg-amber-500/20 text-amber-400 border border-amber-500/30">
+            보기 전용
+          </span>
+          <button v-if="isLoggedIn" @click="handleLogout" class="text-[11px] text-zinc-400 hover:text-rose-500 transition underline">로그아웃</button>
+          <button v-else @click="openLoginScreen" class="text-[11px] font-semibold text-accent hover:underline transition">로그인하기</button>
         </div>
+
         <div class="flex flex-wrap items-center gap-1.5 sm:gap-2 w-full sm:w-auto justify-end">
           <select v-model="filters.account_name" class="p-1.5 text-xs rounded-lg bg-zinc-200 dark:bg-darkCard border border-zinc-300 dark:border-darkBorder text-zinc-800 dark:text-zinc-200 focus:border-accent outline-none font-semibold">
             <option value="">모든 계정 (전체 보기)</option>
             <option v-for="acc in uniqueAccounts" :key="acc" :value="acc">{{ acc }}</option>
           </select>
 
-          <button @click="openAccountManager" class="text-xs text-zinc-500 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white px-2.5 py-1.5 rounded-lg bg-zinc-200 dark:bg-darkCard border border-zinc-300 dark:border-darkBorder transition font-semibold">
+          <button v-if="!isViewOnly" @click="openAccountManager" class="text-xs text-zinc-500 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white px-2.5 py-1.5 rounded-lg bg-zinc-200 dark:bg-darkCard border border-zinc-300 dark:border-darkBorder transition font-semibold">
             ⚙️ 계정 관리
           </button>
 
@@ -113,11 +125,11 @@
           </div>
           <button @click="exportJSON" class="text-xs text-zinc-500 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white px-2 py-1.5 rounded bg-zinc-200 dark:bg-darkCard border border-zinc-300 dark:border-darkBorder transition">JSON</button>
           <button @click="exportCSV" class="text-xs text-zinc-500 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white px-2 py-1.5 rounded bg-zinc-200 dark:bg-darkCard border border-zinc-300 dark:border-darkBorder transition">CSV</button>
-          <label class="text-xs text-zinc-500 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white px-2 py-1.5 rounded bg-zinc-200 dark:bg-darkCard border border-zinc-300 dark:border-darkBorder cursor-pointer transition">
+          <label v-if="!isViewOnly" class="text-xs text-zinc-500 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white px-2 py-1.5 rounded bg-zinc-200 dark:bg-darkCard border border-zinc-300 dark:border-darkBorder cursor-pointer transition">
             복구
             <input type="file" accept=".json" @change="importJSON" class="hidden">
           </label>
-          <button @click="openModal()" class="text-xs bg-accent hover:bg-accentHover text-zinc-950 font-bold px-3 py-1.5 rounded transition shadow-sm shadow-accent/20 ml-1">
+          <button v-if="!isViewOnly" @click="openModal()" class="text-xs bg-accent hover:bg-accentHover text-zinc-950 font-bold px-3 py-1.5 rounded transition shadow-sm shadow-accent/20 ml-1">
             + 기록 추가
           </button>
         </div>
@@ -180,30 +192,30 @@
               <div class="flex items-center gap-1.5">
                 <span class="text-xs font-bold text-accent tracking-wider">📊 TOP-DOWN ANALYSIS</span>
               </div>
-              <button @click="resetTopDown" class="text-[10px] text-zinc-400 hover:text-zinc-200 underline">초기화</button>
+              <button v-if="!isViewOnly" @click="resetTopDown" class="text-[10px] text-zinc-400 hover:text-zinc-200 underline">초기화</button>
             </div>
 
             <div class="space-y-2">
               <div v-for="tf in ['1M', '1W', '1D', '4H', '1H']" :key="tf" class="flex items-center gap-2 p-2 bg-zinc-50 dark:bg-[#202020] rounded-lg border border-zinc-200 dark:border-darkBorder">
                 <div class="bg-[#1a1a1a] text-white font-bold px-2 py-1 rounded text-xs border border-[#333] min-w-[36px] text-center font-mono">{{ tf }}</div>
                 <div class="grid grid-cols-5 gap-1 flex-1">
-                  <select v-model="topDown[tf].opt0" class="p-1 text-[11px] rounded bg-white dark:bg-[#1a1a1a] border border-zinc-300 dark:border-[#3a3a3a] text-customOrange font-semibold outline-none">
+                  <select v-model="topDown[tf].opt0" :disabled="isViewOnly" :class="isViewOnly ? 'opacity-70 cursor-not-allowed' : ''" class="p-1 text-[11px] rounded bg-white dark:bg-[#1a1a1a] border border-zinc-300 dark:border-[#3a3a3a] text-customOrange font-semibold outline-none">
                     <option value="">선택</option>
                     <option value="L">L</option><option value="S">S</option><option value="R">R</option>
                   </select>
-                  <select v-model="topDown[tf].opt1" class="p-1 text-[11px] rounded bg-white dark:bg-[#1a1a1a] border border-zinc-300 dark:border-[#3a3a3a] text-customOrange font-semibold outline-none">
+                  <select v-model="topDown[tf].opt1" :disabled="isViewOnly" :class="isViewOnly ? 'opacity-70 cursor-not-allowed' : ''" class="p-1 text-[11px] rounded bg-white dark:bg-[#1a1a1a] border border-zinc-300 dark:border-[#3a3a3a] text-customOrange font-semibold outline-none">
                     <option value="">선택</option>
                     <option value="L">L</option><option value="S">S</option><option value="R">R</option>
                   </select>
-                  <select v-model="topDown[tf].opt2" class="p-1 text-[11px] rounded bg-white dark:bg-[#1a1a1a] border border-zinc-300 dark:border-[#3a3a3a] text-customOrange font-semibold outline-none">
+                  <select v-model="topDown[tf].opt2" :disabled="isViewOnly" :class="isViewOnly ? 'opacity-70 cursor-not-allowed' : ''" class="p-1 text-[11px] rounded bg-white dark:bg-[#1a1a1a] border border-zinc-300 dark:border-[#3a3a3a] text-customOrange font-semibold outline-none">
                     <option value="">선택</option>
                     <option value="IRL">IRL</option><option value="ERL">ERL</option><option value="PDH LG">PDH LG</option><option value="PDL LG">PDL LG</option><option value="ASIA H LG">ASIA H LG</option><option value="ASIA L LG">ASIA L LG</option><option value="LUNDUN H LG">LUNDUN H LG</option><option value="LUNDUN L LG">LUNDUN L LG</option>
                   </select>
-                  <select v-model="topDown[tf].opt3" class="p-1 text-[11px] rounded bg-white dark:bg-[#1a1a1a] border border-zinc-300 dark:border-[#3a3a3a] text-customOrange font-semibold outline-none">
+                  <select v-model="topDown[tf].opt3" :disabled="isViewOnly" :class="isViewOnly ? 'opacity-70 cursor-not-allowed' : ''" class="p-1 text-[11px] rounded bg-white dark:bg-[#1a1a1a] border border-zinc-300 dark:border-[#3a3a3a] text-customOrange font-semibold outline-none">
                     <option value="">선택</option>
                     <option value="OB">OB</option><option value="IMB">IMB</option><option value="BB">BB</option><option value="RB">RB</option>
                   </select>
-                  <select v-model="topDown[tf].opt4" class="p-1 text-[11px] rounded bg-white dark:bg-[#1a1a1a] border border-zinc-300 dark:border-[#3a3a3a] text-customOrange font-semibold outline-none">
+                  <select v-model="topDown[tf].opt4" :disabled="isViewOnly" :class="isViewOnly ? 'opacity-70 cursor-not-allowed' : ''" class="p-1 text-[11px] rounded bg-white dark:bg-[#1a1a1a] border border-zinc-300 dark:border-[#3a3a3a] text-customOrange font-semibold outline-none">
                     <option value="">선택</option>
                     <option value="P">P</option><option value="D">D</option><option value="0.5">0.5</option><option value="0.62">0.62</option><option value="0.705">0.705</option><option value="0.709">0.709</option>
                   </select>
@@ -245,22 +257,22 @@
               <div class="flex items-center gap-1.5">
                 <span class="text-xs font-bold text-customOrange tracking-wider">⚡ REAL-TIME SMC CHECK</span>
               </div>
-              <button @click="resetLiveChecker" class="text-[10px] text-zinc-400 hover:text-zinc-200 underline">초기화</button>
+              <button v-if="!isViewOnly" @click="resetLiveChecker" class="text-[10px] text-zinc-400 hover:text-zinc-200 underline">초기화</button>
             </div>
 
             <div class="space-y-2.5">
               <div class="p-2 bg-zinc-50 dark:bg-[#202020] rounded-lg border border-zinc-200 dark:border-darkBorder space-y-1">
                 <label class="block text-[10px] font-bold text-zinc-500 dark:text-zinc-400">MS (Market Structure)</label>
                 <div class="grid grid-cols-3 gap-1.5">
-                  <select v-model="liveCheck.ms_tf" class="p-1 text-xs rounded bg-white dark:bg-[#1a1a1a] border border-zinc-300 dark:border-[#3a3a3a] text-customOrange font-semibold outline-none">
+                  <select v-model="liveCheck.ms_tf" :disabled="isViewOnly" :class="isViewOnly ? 'opacity-70 cursor-not-allowed' : ''" class="p-1 text-xs rounded bg-white dark:bg-[#1a1a1a] border border-zinc-300 dark:border-[#3a3a3a] text-customOrange font-semibold outline-none">
                     <option value="">선택</option>
                     <option v-for="tf in timeframes" :key="tf" :value="tf">{{ tf }}</option>
                   </select>
-                  <select v-model="liveCheck.ms_opt1" class="p-1 text-xs rounded bg-white dark:bg-[#1a1a1a] border border-zinc-300 dark:border-[#3a3a3a] text-customOrange font-semibold outline-none">
+                  <select v-model="liveCheck.ms_opt1" :disabled="isViewOnly" :class="isViewOnly ? 'opacity-70 cursor-not-allowed' : ''" class="p-1 text-xs rounded bg-white dark:bg-[#1a1a1a] border border-zinc-300 dark:border-[#3a3a3a] text-customOrange font-semibold outline-none">
                     <option value="">선택</option>
                     <option value="L">L</option><option value="S">S</option><option value="R">R</option>
                   </select>
-                  <select v-model="liveCheck.ms_opt2" class="p-1 text-xs rounded bg-white dark:bg-[#1a1a1a] border border-zinc-300 dark:border-[#3a3a3a] text-customOrange font-semibold outline-none">
+                  <select v-model="liveCheck.ms_opt2" :disabled="isViewOnly" :class="isViewOnly ? 'opacity-70 cursor-not-allowed' : ''" class="p-1 text-xs rounded bg-white dark:bg-[#1a1a1a] border border-zinc-300 dark:border-[#3a3a3a] text-customOrange font-semibold outline-none">
                     <option value="">선택</option>
                     <option value="L">L</option><option value="S">S</option><option value="R">R</option>
                   </select>
@@ -270,11 +282,11 @@
               <div class="p-2 bg-zinc-50 dark:bg-[#202020] rounded-lg border border-zinc-200 dark:border-darkBorder space-y-1">
                 <label class="block text-[10px] font-bold text-zinc-500 dark:text-zinc-400">LQ (Liquidity)</label>
                 <div class="flex gap-1.5">
-                  <select v-model="liveCheck.lq_opt1" class="w-1/2 p-1 text-xs rounded bg-white dark:bg-[#1a1a1a] border border-zinc-300 dark:border-[#3a3a3a] text-customOrange font-semibold outline-none">
+                  <select v-model="liveCheck.lq_opt1" :disabled="isViewOnly" :class="isViewOnly ? 'opacity-70 cursor-not-allowed' : ''" class="w-1/2 p-1 text-xs rounded bg-white dark:bg-[#1a1a1a] border border-zinc-300 dark:border-[#3a3a3a] text-customOrange font-semibold outline-none">
                     <option value="">선택</option>
                     <option value="IRL">IRL</option><option value="ERL">ERL</option><option value="PDH LG">PDH LG</option><option value="PDL LG">PDL LG</option><option value="ASIA H LG">ASIA H LG</option><option value="ASIA L LG">ASIA L LG</option><option value="LUNDUN H LG">LUNDUN H LG</option><option value="LUNDUN L LG">LUNDUN L LG</option>
                   </select>
-                  <select v-model="liveCheck.lq_opt2" class="w-1/2 p-1 text-xs rounded bg-white dark:bg-[#1a1a1a] border border-zinc-300 dark:border-[#3a3a3a] text-customOrange font-semibold outline-none">
+                  <select v-model="liveCheck.lq_opt2" :disabled="isViewOnly" :class="isViewOnly ? 'opacity-70 cursor-not-allowed' : ''" class="w-1/2 p-1 text-xs rounded bg-white dark:bg-[#1a1a1a] border border-zinc-300 dark:border-[#3a3a3a] text-customOrange font-semibold outline-none">
                     <option value="">선택</option>
                     <option value="IRL">IRL</option><option value="ERL">ERL</option><option value="PDH LG">PDH LG</option><option value="PDL LG">PDL LG</option><option value="ASIA H LG">ASIA H LG</option><option value="ASIA L LG">ASIA L LG</option><option value="LUNDUN H LG">LUNDUN H LG</option><option value="LUNDUN L LG">LUNDUN L LG</option>
                   </select>
@@ -284,11 +296,11 @@
               <div class="p-2 bg-zinc-50 dark:bg-[#202020] rounded-lg border border-zinc-200 dark:border-darkBorder space-y-1">
                 <label class="block text-[10px] font-bold text-zinc-500 dark:text-zinc-400">POI (Point of Interest)</label>
                 <div class="flex gap-1.5">
-                  <select v-model="liveCheck.poi_tf" class="w-1/3 p-1 text-xs rounded bg-white dark:bg-[#1a1a1a] border border-zinc-300 dark:border-[#3a3a3a] text-customOrange font-semibold outline-none">
+                  <select v-model="liveCheck.poi_tf" :disabled="isViewOnly" :class="isViewOnly ? 'opacity-70 cursor-not-allowed' : ''" class="w-1/3 p-1 text-xs rounded bg-white dark:bg-[#1a1a1a] border border-zinc-300 dark:border-[#3a3a3a] text-customOrange font-semibold outline-none">
                     <option value="">선택</option>
                     <option v-for="tf in timeframes" :key="tf" :value="tf">{{ tf }}</option>
                   </select>
-                  <select v-model="liveCheck.poi_opt" class="w-2/3 p-1 text-xs rounded bg-white dark:bg-[#1a1a1a] border border-zinc-300 dark:border-[#3a3a3a] text-customOrange font-semibold outline-none">
+                  <select v-model="liveCheck.poi_opt" :disabled="isViewOnly" :class="isViewOnly ? 'opacity-70 cursor-not-allowed' : ''" class="w-2/3 p-1 text-xs rounded bg-white dark:bg-[#1a1a1a] border border-zinc-300 dark:border-[#3a3a3a] text-customOrange font-semibold outline-none">
                     <option value="">선택</option>
                     <option value="OB">OB</option><option value="IMB">IMB</option><option value="BB">BB</option><option value="RB">RB</option>
                   </select>
@@ -298,11 +310,11 @@
               <div class="p-2 bg-zinc-50 dark:bg-[#202020] rounded-lg border border-zinc-200 dark:border-darkBorder space-y-1">
                 <label class="block text-[10px] font-bold text-zinc-500 dark:text-zinc-400">PD / OTE</label>
                 <div class="flex gap-1.5">
-                  <select v-model="liveCheck.pd_opt1" class="w-1/2 p-1 text-xs rounded bg-white dark:bg-[#1a1a1a] border border-zinc-300 dark:border-[#3a3a3a] text-customOrange font-semibold outline-none">
+                  <select v-model="liveCheck.pd_opt1" :disabled="isViewOnly" :class="isViewOnly ? 'opacity-70 cursor-not-allowed' : ''" class="w-1/2 p-1 text-xs rounded bg-white dark:bg-[#1a1a1a] border border-zinc-300 dark:border-[#3a3a3a] text-customOrange font-semibold outline-none">
                     <option value="">선택</option>
                     <option value="P">P</option><option value="D">D</option>
                   </select>
-                  <select v-model="liveCheck.pd_opt2" class="w-1/2 p-1 text-xs rounded bg-white dark:bg-[#1a1a1a] border border-zinc-300 dark:border-[#3a3a3a] text-customOrange font-semibold outline-none">
+                  <select v-model="liveCheck.pd_opt2" :disabled="isViewOnly" :class="isViewOnly ? 'opacity-70 cursor-not-allowed' : ''" class="w-1/2 p-1 text-xs rounded bg-white dark:bg-[#1a1a1a] border border-zinc-300 dark:border-[#3a3a3a] text-customOrange font-semibold outline-none">
                     <option value="">선택</option>
                     <option value="0.5">0.5</option><option value="0.62">0.62</option><option value="0.705">0.705</option><option value="0.709">0.709</option>
                   </select>
@@ -312,11 +324,11 @@
               <div class="p-2 bg-zinc-50 dark:bg-[#202020] rounded-lg border border-zinc-200 dark:border-darkBorder space-y-1">
                 <label class="block text-[10px] font-bold text-zinc-500 dark:text-zinc-400">LTF EM (Entry Model)</label>
                 <div class="flex gap-1.5">
-                  <select v-model="liveCheck.ltf_tf" class="w-1/3 p-1 text-xs rounded bg-white dark:bg-[#1a1a1a] border border-zinc-300 dark:border-[#3a3a3a] text-customOrange font-semibold outline-none">
+                  <select v-model="liveCheck.ltf_tf" :disabled="isViewOnly" :class="isViewOnly ? 'opacity-70 cursor-not-allowed' : ''" class="w-1/3 p-1 text-xs rounded bg-white dark:bg-[#1a1a1a] border border-zinc-300 dark:border-[#3a3a3a] text-customOrange font-semibold outline-none">
                     <option value="">선택</option>
                     <option v-for="tf in timeframes" :key="tf" :value="tf">{{ tf }}</option>
                   </select>
-                  <select v-model="liveCheck.ltf_opt" class="w-2/3 p-1 text-xs rounded bg-white dark:bg-[#1a1a1a] border border-zinc-300 dark:border-[#3a3a3a] text-customOrange font-semibold outline-none">
+                  <select v-model="liveCheck.ltf_opt" :disabled="isViewOnly" :class="isViewOnly ? 'opacity-70 cursor-not-allowed' : ''" class="w-2/3 p-1 text-xs rounded bg-white dark:bg-[#1a1a1a] border border-zinc-300 dark:border-[#3a3a3a] text-customOrange font-semibold outline-none">
                     <option value="">선택</option>
                     <option value="BOS">BOS</option>
                     <option value="RANGE REVERSAL">RANGE REVERSAL</option>
@@ -326,9 +338,20 @@
                 </div>
               </div>
 
+              <!-- HTF 캔들 방향 체크박스 (LTF EM 과 진입 피보나치 사이) -->
+              <div class="p-2 bg-zinc-50 dark:bg-[#202020] rounded-lg border border-zinc-200 dark:border-darkBorder flex items-center justify-between">
+                <label :class="isViewOnly ? 'cursor-not-allowed opacity-70' : 'cursor-pointer'" class="flex items-center gap-2 select-none text-xs font-bold text-zinc-700 dark:text-zinc-200 w-full">
+                  <input type="checkbox" v-model="liveCheck.htf_candle" :disabled="isViewOnly" :class="isViewOnly ? 'cursor-not-allowed' : 'cursor-pointer'" class="rounded accent-customOrange w-4 h-4">
+                  <span>HTF 캔들 방향</span>
+                </label>
+                <span class="text-[10px] font-mono font-semibold" :class="liveCheck.htf_candle ? 'text-customOrange' : 'text-zinc-400'">
+                  {{ liveCheck.htf_candle ? 'CHECKED' : '-' }}
+                </span>
+              </div>
+
               <div class="p-2 bg-zinc-50 dark:bg-[#202020] rounded-lg border border-customOrange/30 space-y-1">
                 <label class="block text-[10px] font-bold text-customOrange">진입 피보나치</label>
-                <select v-model="liveCheck.fibo_opt" class="w-full p-1.5 text-xs rounded bg-white dark:bg-[#1a1a1a] border border-zinc-300 dark:border-[#3a3a3a] text-customOrange font-semibold outline-none">
+                <select v-model="liveCheck.fibo_opt" :disabled="isViewOnly" :class="isViewOnly ? 'opacity-70 cursor-not-allowed' : ''" class="w-full p-1.5 text-xs rounded bg-white dark:bg-[#1a1a1a] border border-zinc-300 dark:border-[#3a3a3a] text-customOrange font-semibold outline-none">
                   <option value="">선택</option>
                   <option value="0.5">0.5</option>
                   <option value="0.62">0.62</option>
@@ -338,7 +361,7 @@
               </div>
             </div>
 
-            <div class="pt-2 border-t border-zinc-200 dark:border-darkBorder text-xs space-y-2">
+            <div v-if="!isViewOnly" class="pt-2 border-t border-zinc-200 dark:border-darkBorder text-xs space-y-2">
               <span class="text-zinc-400 text-[11px] block">💡 체크한 세팅값을 매매 기록에 즉시 연동합니다.</span>
               <button @click="applyToChecklistForm" class="w-full py-2 bg-customOrange hover:bg-customOrange/80 text-zinc-950 font-bold rounded transition shadow-sm text-center">
                 📝 이 세팅값으로 매매 기록 작성
@@ -411,8 +434,8 @@
             </span>
           </div>
           <div class="flex items-center gap-1 sm:gap-2">
-            <button @click="openModal(selectedTrade)" class="text-xs text-zinc-400 hover:text-zinc-900 dark:hover:text-white p-1">수정</button>
-            <button @click="deleteTrade(selectedTrade.id)" class="text-xs text-rose-500 hover:text-rose-400 p-1">삭제</button>
+            <button v-if="!isViewOnly" @click="openModal(selectedTrade)" class="text-xs text-zinc-400 hover:text-zinc-900 dark:hover:text-white p-1">수정</button>
+            <button v-if="!isViewOnly" @click="deleteTrade(selectedTrade.id)" class="text-xs text-rose-500 hover:text-rose-400 p-1">삭제</button>
             <button @click="selectedTrade = null" class="text-xs text-zinc-400 hover:text-zinc-200 p-1 ml-1">✕</button>
           </div>
         </div>
@@ -440,7 +463,8 @@
                 <div><span class="text-zinc-400 text-[10px]">POI:</span> <span class="text-customOrange font-semibold">{{ getSmcData(selectedTrade).poi || '-' }}</span></div>
                 <div><span class="text-zinc-400 text-[10px]">PD/OTE:</span> <span class="text-customOrange font-semibold">{{ getSmcData(selectedTrade).pd || '-' }}</span></div>
                 <div><span class="text-zinc-400 text-[10px]">LTF EM:</span> <span class="text-customOrange font-semibold">{{ getSmcData(selectedTrade).ltf || '-' }}</span></div>
-                <div><span class="text-zinc-400 text-[10px]">FIBO:</span> <span class="text-customOrange font-semibold">{{ getSmcData(selectedTrade).fibo || '-' }}</span></div>
+                <div><span class="text-zinc-400 text-[10px]">HTF 캔들 방향:</span> <span class="text-customOrange font-semibold">{{ getSmcData(selectedTrade).htfCandle ? '✓ 체크됨' : '-' }}</span></div>
+                <div class="col-span-2"><span class="text-zinc-400 text-[10px]">FIBO:</span> <span class="text-customOrange font-semibold">{{ getSmcData(selectedTrade).fibo || '-' }}</span></div>
               </div>
             </div>
 
@@ -528,12 +552,12 @@
                 <th class="p-3">결과</th>
                 <th class="p-3">거래평가</th>
                 <th class="p-3">차트</th>
-                <th class="p-3 text-right">관리</th>
+                <th v-if="!isViewOnly" class="p-3 text-right">관리</th>
               </tr>
             </thead>
             <tbody class="divide-y divide-zinc-200 dark:divide-darkBorder">
               <tr v-if="filteredTrades.length === 0">
-                <td colspan="11" class="p-6 text-center text-zinc-400">기록이 없습니다.</td>
+                <td :colspan="isViewOnly ? 10 : 11" class="p-6 text-center text-zinc-400">기록이 없습니다.</td>
               </tr>
               <tr v-for="trade in filteredTrades" :key="trade.id" @click="selectTrade(trade)"
                   :class="selectedTrade && selectedTrade.id === trade.id ? 'bg-accent/10 border-l-2 border-accent' : 'hover:bg-zinc-50 dark:hover:bg-[#2c2c2c]'"
@@ -552,6 +576,7 @@
                   <span class="text-customOrange font-semibold">{{ getSmcData(trade).poi || '-' }}</span> 
                   <span class="text-zinc-400 px-1">/</span> 
                   <span class="text-customOrange font-semibold">{{ getSmcData(trade).ltf || '-' }}</span>
+                  <span v-if="getSmcData(trade).htfCandle" class="text-customOrange ml-1 font-semibold">[HTF]</span>
                   <span v-if="getSmcData(trade).fibo" class="text-accent ml-1 font-semibold">({{ getSmcData(trade).fibo }})</span>
                 </td>
                 <td class="p-3 font-mono text-accent">{{ formatRR(trade.rr) }}</td>
@@ -569,7 +594,7 @@
                   <span v-if="getImages(trade).length > 0" class="text-accent">🖼️ {{ getImages(trade).length }}</span>
                   <span v-else class="text-zinc-400">-</span>
                 </td>
-                <td class="p-3 text-right space-x-2" @click.stop>
+                <td v-if="!isViewOnly" class="p-3 text-right space-x-2" @click.stop>
                   <button @click="openModal(trade)" class="text-zinc-400 hover:text-zinc-200 p-1">수정</button>
                   <button @click="deleteTrade(trade.id)" class="text-rose-500 hover:text-rose-400 p-1">삭제</button>
                 </td>
@@ -580,7 +605,7 @@
       </section>
 
       <!-- 계정 관리 모달 -->
-      <div v-if="showAccountModal" class="fixed inset-0 bg-black/80 flex items-center justify-center p-3 sm:p-4 z-50">
+      <div v-if="showAccountModal && !isViewOnly" class="fixed inset-0 bg-black/80 flex items-center justify-center p-3 sm:p-4 z-50">
         <div class="bg-white dark:bg-darkCard border border-accent/40 rounded-xl p-4 sm:p-5 max-w-sm w-full space-y-4 shadow-xl">
           <div class="flex justify-between items-center pb-2 border-b border-zinc-200 dark:border-darkBorder">
             <h3 class="text-sm font-bold text-zinc-800 dark:text-white">⚙️ 계정 관리</h3>
@@ -625,7 +650,7 @@
       </div>
 
       <!-- 기록 추가/수정 모달 -->
-      <div v-if="showModal" class="fixed inset-0 bg-black/80 flex items-center justify-center p-3 sm:p-4 z-50 overflow-y-auto">
+      <div v-if="showModal && !isViewOnly" class="fixed inset-0 bg-black/80 flex items-center justify-center p-3 sm:p-4 z-50 overflow-y-auto">
         <div class="bg-white dark:bg-darkCard border border-accent/40 rounded-xl p-4 sm:p-5 max-w-lg w-full space-y-3.5 my-auto max-h-[92vh] overflow-y-auto shadow-xl">
           <div class="flex justify-between items-center pb-2 border-b border-zinc-200 dark:border-darkBorder">
             <h3 class="text-sm font-bold text-zinc-800 dark:text-white">{{ isEditing ? '기록 수정' : '새 SMC 매매 기록' }}</h3>
@@ -779,6 +804,13 @@
                   </select>
                 </div>
 
+                <div class="sm:col-span-2 pt-1">
+                  <label class="flex items-center gap-2 cursor-pointer select-none text-xs font-semibold text-zinc-700 dark:text-zinc-200">
+                    <input type="checkbox" v-model="form.smc_htf_candle" class="rounded accent-customOrange w-4 h-4 cursor-pointer">
+                    <span>HTF 캔들 방향</span>
+                  </label>
+                </div>
+
               </div>
             </div>
 
@@ -853,8 +885,11 @@
         setup() {
           const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
           
-          // 로그인 관련 상태
-          const isLoggedIn = ref(localStorage.getItem('isLoggedIn') === 'true');
+          // 로그인 및 보기 전용 모드 상태 (탭 닫을 때 세션 종료되도록 sessionStorage 사용)
+          const isLoggedIn = ref(sessionStorage.getItem('isLoggedIn') === 'true');
+          const isViewOnly = ref(!isLoggedIn.value && sessionStorage.getItem('viewOnlyMode') === 'true');
+          const hasAccess = computed(() => isLoggedIn.value || isViewOnly.value);
+
           const loginForm = ref({
             id: localStorage.getItem('savedId') || '',
             pw: '',
@@ -865,7 +900,9 @@
           const handleLogin = () => {
             if (loginForm.value.id === '치우' && loginForm.value.pw === '0818') {
               isLoggedIn.value = true;
-              localStorage.setItem('isLoggedIn', 'true');
+              isViewOnly.value = false;
+              sessionStorage.setItem('isLoggedIn', 'true');
+              sessionStorage.removeItem('viewOnlyMode');
               if (loginForm.value.rememberId) {
                 localStorage.setItem('savedId', loginForm.value.id);
               } else {
@@ -878,9 +915,28 @@
             }
           };
 
+          const enterViewOnlyMode = () => {
+            isLoggedIn.value = false;
+            isViewOnly.value = true;
+            sessionStorage.removeItem('isLoggedIn');
+            sessionStorage.setItem('viewOnlyMode', 'true');
+            loginError.value = '';
+            fetchTrades();
+          };
+
+          const openLoginScreen = () => {
+            isLoggedIn.value = false;
+            isViewOnly.value = false;
+            sessionStorage.removeItem('isLoggedIn');
+            sessionStorage.removeItem('viewOnlyMode');
+            loginForm.value.pw = '';
+          };
+
           const handleLogout = () => {
             isLoggedIn.value = false;
-            localStorage.removeItem('isLoggedIn');
+            isViewOnly.value = false;
+            sessionStorage.removeItem('isLoggedIn');
+            sessionStorage.removeItem('viewOnlyMode');
             loginForm.value.pw = '';
           };
 
@@ -911,6 +967,7 @@
           });
 
           watch(topDown, (newVal) => {
+            if (isViewOnly.value) return;
             localStorage.setItem('topDownAnalysis', JSON.stringify(newVal));
           }, { deep: true });
 
@@ -919,6 +976,7 @@
           });
 
           const resetTopDown = () => {
+            if (isViewOnly.value) return;
             for (let tf in topDown.value) {
               topDown.value[tf] = { opt0: '', opt1: '', opt2: '', opt3: '', opt4: '' };
             }
@@ -931,14 +989,25 @@
             poi_tf: '', poi_opt: '',
             pd_opt1: '', pd_opt2: '',
             ltf_tf: '', ltf_opt: '',
+            htf_candle: false,
             fibo_opt: ''
           });
 
           const resetLiveChecker = () => {
-            liveCheck.value = { ms_tf: '', ms_opt1: '', ms_opt2: '', lq_opt1: '', lq_opt2: '', poi_tf: '', poi_opt: '', pd_opt1: '', pd_opt2: '', ltf_tf: '', ltf_opt: '', fibo_opt: '' };
+            if (isViewOnly.value) return;
+            liveCheck.value = {
+              ms_tf: '', ms_opt1: '', ms_opt2: '',
+              lq_opt1: '', lq_opt2: '',
+              poi_tf: '', poi_opt: '',
+              pd_opt1: '', pd_opt2: '',
+              ltf_tf: '', ltf_opt: '',
+              htf_candle: false,
+              fibo_opt: ''
+            };
           };
 
           const applyToChecklistForm = () => {
+            if (isViewOnly.value) return;
             openModal();
             form.value.smc_ms_tf = liveCheck.value.ms_tf;
             form.value.smc_ms_opt1 = liveCheck.value.ms_opt1;
@@ -951,6 +1020,7 @@
             form.value.smc_pd_opt2 = liveCheck.value.pd_opt2;
             form.value.smc_ltf_tf = liveCheck.value.ltf_tf;
             form.value.smc_ltf_opt = liveCheck.value.ltf_opt;
+            form.value.smc_htf_candle = !!liveCheck.value.htf_candle;
             form.value.smc_fibo_opt = liveCheck.value.fibo_opt;
           };
 
@@ -993,6 +1063,7 @@
             smc_poi_tf: '', smc_poi_opt: '',
             smc_pd_opt1: '', smc_pd_opt2: '',
             smc_ltf_tf: '', smc_ltf_opt: '',
+            smc_htf_candle: false,
             smc_fibo_opt: ''
           });
 
@@ -1034,6 +1105,7 @@
                     poi: formatPair(parsed.poi_tf, parsed.poi_opt),
                     pd: formatPd(parsed.pd_opt1, parsed.pd_opt2),
                     ltf: formatPair(parsed.ltf_tf, parsed.ltf_opt),
+                    htfCandle: !!parsed.htf_candle,
                     fibo: parsed.fibo_opt || '',
                     raw: parsed
                   };
@@ -1048,6 +1120,7 @@
               poi: text.includes('POI') ? (text.split('POI')[1]?.split('\n')[0]?.replace(/[:=]/g, '').trim() || '') : '',
               pd: text.includes('PD') ? (text.split('PD')[1]?.split('\n')[0]?.replace(/[:=]/g, '').trim() || '') : '',
               ltf: text.includes('LTF') ? (text.split('LTF')[1]?.split('\n')[0]?.replace(/[:=]/g, '').trim() || '') : '',
+              htfCandle: false,
               fibo: ''
             };
           };
@@ -1099,7 +1172,7 @@
           };
 
           const fetchTrades = async () => {
-            if (!isLoggedIn.value) return;
+            if (!hasAccess.value) return;
             const { data } = await supabaseClient.from('trades').select('*').order('trade_date', { ascending: false }).order('id', { ascending: false });
             if (data) {
               trades.value = data;
@@ -1111,6 +1184,7 @@
           };
 
           const uploadFiles = async (files) => {
+            if (isViewOnly.value) return;
             const validFiles = Array.from(files).filter(f => f.type.startsWith('image/'));
             if (!validFiles.length) return;
             uploading.value = true;
@@ -1154,7 +1228,7 @@
             if (savedCustomAccs) {
               try { customAccounts.value = JSON.parse(savedCustomAccs); } catch (e) {}
             }
-            if (isLoggedIn.value) {
+            if (hasAccess.value) {
               fetchTrades();
             }
             window.addEventListener('keydown', handleKeyDown);
@@ -1172,15 +1246,21 @@
 
           const selectDateFromCalendar = (dateStr) => {
             const found = trades.value.find(t => t.trade_date === dateStr);
-            found ? selectTrade(found) : openModal(null, dateStr);
+            if (found) {
+              selectTrade(found);
+            } else if (!isViewOnly.value) {
+              openModal(null, dateStr);
+            }
           };
 
           const openAccountManager = () => {
+            if (isViewOnly.value) return;
             accountManager.value = { target: uniqueAccounts.value[0] || '', newName: '', addName: '' };
             showAccountModal.value = true;
           };
 
           const executeAccountAdd = () => {
+            if (isViewOnly.value) return;
             const name = accountManager.value.addName.trim();
             if (!name) {
               alert('추가할 계정 이름을 입력해주세요.');
@@ -1199,6 +1279,7 @@
           };
 
           const executeAccountRename = async () => {
+            if (isViewOnly.value) return;
             const { target, newName } = accountManager.value;
             const trimmedNewName = newName.trim();
             if (!target || !trimmedNewName) {
@@ -1223,6 +1304,7 @@
           };
 
           const executeAccountDelete = async () => {
+            if (isViewOnly.value) return;
             const { target } = accountManager.value;
             if (!target) {
               alert('삭제할 계정을 선택해주세요.');
@@ -1341,10 +1423,11 @@
           };
 
           watch(filteredTrades, () => {
-            if (isLoggedIn.value) updateCharts();
+            if (hasAccess.value) updateCharts();
           });
 
           const openModal = (trade = null, dateStr = null) => {
+            if (isViewOnly.value) return;
             if (trade) {
               isEditing.value = true; editingId.value = trade.id;
               const smc = getSmcData(trade);
@@ -1373,6 +1456,7 @@
                 smc_pd_opt2: rawSmc.pd_opt2 || '',
                 smc_ltf_tf: rawSmc.ltf_tf || '',
                 smc_ltf_opt: rawSmc.ltf_opt || '',
+                smc_htf_candle: !!rawSmc.htf_candle,
                 smc_fibo_opt: rawSmc.fibo_opt || ''
               };
             } else {
@@ -1385,6 +1469,7 @@
           const closeModal = () => showModal.value = false;
 
           const saveTrade = async () => {
+            if (isViewOnly.value) return;
             const smcObj = {
               ms_tf: form.value.smc_ms_tf,
               ms_opt1: form.value.smc_ms_opt1,
@@ -1397,6 +1482,7 @@
               pd_opt2: form.value.smc_pd_opt2,
               ltf_tf: form.value.smc_ltf_tf,
               ltf_opt: form.value.smc_ltf_opt,
+              htf_candle: !!form.value.smc_htf_candle,
               fibo_opt: form.value.smc_fibo_opt
             };
 
@@ -1436,6 +1522,7 @@
           };
 
           const deleteTrade = async (id) => {
+            if (isViewOnly.value) return;
             if (confirm('삭제하시겠습니까?')) {
               await supabaseClient.from('trades').delete().eq('id', id);
               if (selectedTrade.value?.id === id) selectedTrade.value = null;
@@ -1457,6 +1544,7 @@
           };
 
           const importJSON = (e) => {
+            if (isViewOnly.value) return;
             const file = e.target.files[0];
             if (!file) return;
             const reader = new FileReader();
@@ -1474,7 +1562,8 @@
           };
 
           return {
-            isLoggedIn, loginForm, loginError, handleLogin, handleLogout,
+            isLoggedIn, isViewOnly, hasAccess, enterViewOnlyMode, openLoginScreen,
+            loginForm, loginError, handleLogin, handleLogout,
             trades, filteredTrades, filters, stats, showModal, showAccountModal, customAccounts, accountManager, executeAccountAdd, isEditing, form, uploading, isDragging, selectedTrade, activeImageIndex,
             selectedTradeImages, visibleDetailImages, modalImages, modalActiveIndex, getImages, getSmcData, formatRR,
             calendarYear, calendarMonth, calendarDays, uniqueAccounts, openAccountManager, executeAccountRename, executeAccountDelete, dailyPnlMap, prevMonth, nextMonth, selectDateFromCalendar, selectTrade, clearFilters,
